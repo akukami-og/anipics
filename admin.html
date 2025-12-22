@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin</title>
+</head>
+<body style="background:black;color:white;text-align:center">
+
+<h2>Admin Login</h2>
+<input type="password" id="p">
+<button onclick="login()">Login</button>
+
+<script>
+function login(){
+  if(document.getElementById("p").value==="AKUMA123"){
+    alert("Upload images to /images folder and add name in images.json");
+  } else {
+    alert("Wrong password");
+  }
+}
+</script>
+
+</body>
+</html>
