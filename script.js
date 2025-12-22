@@ -10,14 +10,25 @@ fetch("images.json")
       const image = document.createElement("img");
       image.src = "images/" + img;
 
-      let count = localStorage.getItem(img) || 0;
+      // LIKE DATA
+      let liked = localStorage.getItem(img + "_liked") === "true";
+      let count = localStorage.getItem(img + "_count") || 0;
+
       const likeBtn = document.createElement("button");
-      likeBtn.innerHTML = `❤️ <span>${count}</span>`;
+      likeBtn.innerHTML = liked
+        ? `❤️ Liked (<span>${count}</span>)`
+        : `🤍 Like (<span>${count}</span>)`;
 
       likeBtn.onclick = () => {
+        if (liked) return; // stop multiple likes
+
+        liked = true;
         count++;
-        localStorage.setItem(img, count);
-        likeBtn.querySelector("span").innerText = count;
+
+        localStorage.setItem(img + "_liked", "true");
+        localStorage.setItem(img + "_count", count);
+
+        likeBtn.innerHTML = `❤️ Liked (<span>${count}</span>)`;
       };
 
       const download = document.createElement("a");
@@ -30,6 +41,7 @@ fetch("images.json")
     });
   });
 
+// HIDE LOADER
 window.onload = () => {
   document.getElementById("loader").style.display = "none";
 };
