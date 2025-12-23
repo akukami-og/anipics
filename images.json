@@ -1,8 +1,26 @@
 [
-  "dp1.jpg",
-  "dp2.jpg",
-  "dp3.jpg",
-  "dp4.jpg",
-  "dp5.jpg",
-  "dp6.jpg"
+  {
+    "file": "dp1.jpg",
+    "tags": ["neon", "dark"]
+  },
+  {
+    "file": "dp2.jpg",
+    "tags": ["anime-boy", "blue"]
+  },
+  {
+    "file": "dp3.jpg",
+    "tags": ["anime-girl", "soft"]
+  },
+  {
+    "file": "dp4.jpg",
+    "tags": ["mask", "neon"]
+  },
+  {
+    "file": "dp5.jpg",
+    "tags": ["dark", "red"]
+  },
+  {
+    "file": "dp6.jpg",
+    "tags": ["anime-boy", "black"]
+  }
 ]
