@@ -1,4 +1,3 @@
-
 /* ================= NEON ANIMATED BACKGROUND ================= */
 .neon-bg {
   position: fixed;
@@ -84,13 +83,28 @@ h1 {
     0 0 20px #00eaff;
 }
 
-/* ================= GALLERY ================= */
+/* ================= GALLERY GRID ================= */
 .gallery {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 1 2 / 3 4 */
   gap: 22px;
   padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+/* Tablet */
+@media (min-width: 600px) {
+  .gallery {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Desktop */
+@media (min-width: 900px) {
+  .gallery {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 /* ================= CARD ================= */
@@ -159,6 +173,23 @@ button:hover, a:hover {
   box-shadow:
     0 0 20px #ff003c,
     0 0 30px #00eaff;
+}
+
+/* ================= FOOTER ================= */
+.site-footer {
+  margin-top: 40px;
+  padding: 20px 10px;
+  font-size: 13px;
+  color: #aaa;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.45);
+  box-shadow: 0 0 20px rgba(0,234,255,0.15);
+}
+
+.site-footer .credit {
+  margin-top: 6px;
+  color: #00eaff;
+  text-shadow: 0 0 10px rgba(0,234,255,0.6);
 }
 
 /* ================= LOADER ================= */
@@ -232,4 +263,4 @@ button:hover, a:hover {
 @keyframes zoomIn {
   from { transform: scale(0.7); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
-  }
+}
