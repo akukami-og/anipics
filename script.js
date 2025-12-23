@@ -1,4 +1,3 @@
-
 const gallery = document.getElementById("gallery");
 const searchInput = document.getElementById("search");
 const categoriesDiv = document.getElementById("categories");
@@ -6,6 +5,7 @@ const preview = document.getElementById("preview");
 const previewImg = document.getElementById("previewImg");
 const closeBtn = document.getElementById("close");
 
+/* ================= DATA ================= */
 let allImages = [];
 let activeTag = "all";
 
@@ -26,21 +26,23 @@ function buildCategories() {
     img.tags.forEach(tag => tagSet.add(tag));
   });
 
-  categoriesDiv.innerHTML = `<div class="category active" data-tag="all">All</div>`;
+  categoriesDiv.innerHTML =
+    `<div class="category active" data-tag="all">All</div>`;
 
   tagSet.forEach(tag => {
     const btn = document.createElement("div");
     btn.className = "category";
     btn.dataset.tag = tag;
-    btn.innerText = tag;
+    btn.textContent = tag;
     categoriesDiv.appendChild(btn);
   });
 
-  document.querySelectorAll(".category").forEach(btn => {
+  categoriesDiv.querySelectorAll(".category").forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll(".category").forEach(b =>
-        b.classList.remove("active")
-      );
+      categoriesDiv
+        .querySelectorAll(".category")
+        .forEach(b => b.classList.remove("active"));
+
       btn.classList.add("active");
       activeTag = btn.dataset.tag;
       filterImages();
@@ -56,23 +58,22 @@ function renderImages(images) {
     const card = document.createElement("div");
     card.className = "card";
 
+    /* IMAGE */
     const image = document.createElement("img");
     image.src = "images/" + img.file;
+    image.alt = img.file;
 
-    // FULL SCREEN PREVIEW
     image.onclick = () => {
       preview.style.display = "flex";
       previewImg.src = image.src;
     };
 
-    // LIKE SYSTEM (ONE TIME PER DEVICE)
+    /* LIKE (LOCAL – ONE TIME PER DEVICE) */
     let liked = localStorage.getItem(img.file + "_liked") === "true";
-    let count = localStorage.getItem(img.file + "_count") || 0;
+    let count = Number(localStorage.getItem(img.file + "_count")) || 0;
 
     const likeBtn = document.createElement("button");
-    likeBtn.innerHTML = liked
-      ? `❤️ Liked (<span>${count}</span>)`
-      : `🤍 Like (<span>${count}</span>)`;
+    updateLikeBtn();
 
     likeBtn.onclick = () => {
       if (liked) return;
@@ -83,14 +84,20 @@ function renderImages(images) {
       localStorage.setItem(img.file + "_liked", "true");
       localStorage.setItem(img.file + "_count", count);
 
-      likeBtn.innerHTML = `❤️ Liked (<span>${count}</span>)`;
+      updateLikeBtn();
     };
 
-    // DOWNLOAD
+    function updateLikeBtn() {
+      likeBtn.innerHTML = liked
+        ? `❤️ Liked (<span>${count}</span>)`
+        : `🤍 Like (<span>${count}</span>)`;
+    }
+
+    /* DOWNLOAD */
     const download = document.createElement("a");
     download.href = image.src;
     download.download = "";
-    download.innerText = "⬇ Download";
+    download.textContent = "⬇ Download";
 
     card.append(image, likeBtn, download);
     gallery.appendChild(card);
@@ -118,7 +125,7 @@ function filterImages() {
 /* ================= SEARCH ================= */
 searchInput.oninput = filterImages;
 
-/* ================= CLOSE PREVIEW ================= */
+/* ================= PREVIEW CLOSE ================= */
 closeBtn.onclick = () => {
   preview.style.display = "none";
 };
@@ -131,3 +138,7 @@ preview.onclick = e => {
 window.onload = () => {
   document.getElementById("loader").style.display = "none";
 };
+
+/* ================= FOOTER YEAR ================= */
+document.getElementById("year").textContent =
+  new Date().getFullYear();
