@@ -4,62 +4,96 @@ body {
   color: white;
   text-align: center;
   font-family: Arial, sans-serif;
+  overflow-x: hidden;
 }
 
 h1 {
   margin: 20px 0;
   color: #00eaff;
-  text-shadow: 0 0 10px #00eaff, 0 0 25px #00eaff;
+  text-shadow:
+    0 0 10px #00eaff,
+    0 0 25px #00eaff,
+    0 0 40px rgba(0,234,255,0.6);
 }
 
-/* GALLERY */
+/* ================= GALLERY ================= */
 .gallery {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 20px;
+  gap: 22px;
   padding: 20px;
 }
 
-/* CARD */
+/* ================= CARD ================= */
 .card {
   background: #0b0b0b;
-  padding: 15px;
-  border-radius: 20px;
+  padding: 16px;
+  border-radius: 22px;
   box-shadow:
     0 0 15px rgba(0,234,255,0.4),
     0 0 20px rgba(255,0,60,0.4);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
 
-/* IMAGE */
+.card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow:
+    0 0 30px rgba(255,0,60,0.7),
+    0 0 45px rgba(0,234,255,0.7);
+}
+
+/* ================= IMAGE ================= */
 .card img {
   width: 160px;
   height: 160px;
   border-radius: 50%;
   object-fit: cover;
+  cursor: pointer;
   border: 3px solid transparent;
   background:
     linear-gradient(#000,#000) padding-box,
     linear-gradient(135deg,#ff003c,#00eaff) border-box;
-  box-shadow: 0 0 15px #ff003c, 0 0 20px #00eaff;
+  box-shadow:
+    0 0 18px #ff003c,
+    0 0 28px #00eaff;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
 
-/* BUTTONS */
+.card img:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 0 30px #ff003c,
+    0 0 45px #00eaff;
+}
+
+/* ================= BUTTONS ================= */
 button, a {
   display: block;
   margin: 10px auto;
-  padding: 8px 18px;
-  border-radius: 25px;
+  padding: 9px 20px;
+  border-radius: 30px;
   background: transparent;
   color: white;
+  font-size: 14px;
   border: 2px solid;
   border-image: linear-gradient(135deg,#ff003c,#00eaff) 1;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 0 10px #ff003c, 0 0 10px #00eaff;
+  box-shadow:
+    0 0 10px #ff003c,
+    0 0 12px #00eaff;
+  transition: all 0.3s ease;
 }
 
-/* LOADER */
+button:hover, a:hover {
+  background: linear-gradient(135deg,#ff003c,#00eaff);
+  box-shadow:
+    0 0 20px #ff003c,
+    0 0 30px #00eaff;
+}
+
+/* ================= LOADER ================= */
 #loader {
   position: fixed;
   inset: 0;
@@ -79,7 +113,9 @@ button, a {
   border-top: 4px solid #ff003c;
   border-right: 4px solid #00eaff;
   animation: spin 1s linear infinite;
-  box-shadow: 0 0 20px #ff003c, 0 0 20px #00eaff;
+  box-shadow:
+    0 0 25px #ff003c,
+    0 0 25px #00eaff;
 }
 
 @keyframes spin {
@@ -89,4 +125,50 @@ button, a {
 #loader p {
   margin-top: 15px;
   color: #00eaff;
+  text-shadow: 0 0 10px #00eaff;
+}
+
+/* ================= FULL SCREEN PREVIEW ================= */
+#preview {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+#preview img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 22px;
+  box-shadow:
+    0 0 35px #ff003c,
+    0 0 55px #00eaff;
+  animation: zoomIn 0.35s ease;
+}
+
+#close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-size: 32px;
+  cursor: pointer;
+  color: #00eaff;
+  text-shadow:
+    0 0 15px #00eaff,
+    0 0 30px #00eaff;
+}
+
+/* PREVIEW ANIMATION */
+@keyframes zoomIn {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
