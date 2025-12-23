@@ -1,26 +1,26 @@
 [
   {
     "file": "dp1.jpg",
-    "tags": ["anime-boy"]
+    "tags": ["anime-boy","happy"]
   },
   {
     "file": "dp2.jpg",
-    "tags": ["anime-boy"]
+    "tags": ["anime-boy","happy"]
   },
   {
     "file": "dp3.jpg",
-    "tags": ["anime-boy"]
+    "tags": ["anime-boy","happy"]
   },
   {
     "file": "dp4.jpg",
-    "tags": ["dark","anime-boy"]
+    "tags": ["dark","anime-boy","sad"]
   },
   {
     "file": "dp5.jpg",
-    "tags": ["anime-boy", "blue"]
+    "tags": ["anime-boy", "blue","happy"]
   },
   {
     "file": "dp6.jpg",
-    "tags": ["anime-boy", "black"]
+    "tags": ["anime-boy", "black","happy"]
   }
 ]
