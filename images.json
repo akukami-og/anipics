@@ -26,5 +26,33 @@
   {
   "file": "dp7.jpg",
   "tags": ["anime-boy", "dark", "black","sad"]
+  },
+  {
+    "file": "dp8.jpg",
+    "tags": ["anime-boy", "sad", "dark", "alone"]
+  },
+  {
+    "file": "dp9.jpg",
+    "tags": ["anime-girl", "dark", "alone"]
+  },
+  {
+    "file": "dp10.jpg",
+    "tags": ["anime-boy", "dark", "alone"]
+  },
+  {
+    "file": "dp11.jpg",
+    "tags": ["anime-girl"]
+  },
+  {
+    "file": "dp12.jpg",
+    "tags": ["anime-boy", "alone", "sad", "black"]
+  },
+  {
+    "file": "dp13.jpg",
+    "tags": ["anime-boy", "sad", "alone", "dark"]
+  },
+  {
+    "file": "dp14.jpg",
+    "tags": ["anime-boy", "happy", "blue"]
   }
 ]
