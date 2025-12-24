@@ -1,5 +1,5 @@
 /***********************
- * SUPABASE SETUP (v2 FIX)
+ * SUPABASE SETUP (v2)
  ***********************/
 const supabaseUrl = "https://uekehssbugjcdjopietz.supabase.co";
 const supabaseKey =
@@ -27,27 +27,35 @@ let activeTag = "all";
 let likeMap = {}; // image -> count
 
 /***********************
- * INIT
+ * INIT (NON-BLOCKING)
  ***********************/
 init();
 
 async function init() {
   try {
-    const imagesRes = await fetch("images.json");
-    allImages = await imagesRes.json();
+    // 1️⃣ Load images first (critical)
+    const res = await fetch("images.json");
+    allImages = await res.json();
 
-    await loadLikes();
     buildCategories();
     renderImages(allImages);
+
+    // 2️⃣ Hide loader immediately
+    hideLoader();
+
+    // 3️⃣ Load likes in background (safe)
+    loadLikes().then(() => {
+      renderImages(allImages);
+    });
+
   } catch (err) {
     console.error("Init error:", err);
-  } finally {
-    hideLoader();
+    hideLoader(); // fail-safe
   }
 }
 
 /***********************
- * LOAD LIKES (ONE QUERY)
+ * LOAD LIKES (BACKGROUND)
  ***********************/
 async function loadLikes() {
   const { data, error } = await supabaseClient
@@ -183,7 +191,7 @@ function filterImages() {
 searchInput.addEventListener("input", filterImages);
 
 /***********************
- * PREVIEW CLOSE
+ * PREVIEW
  ***********************/
 function closePreview() {
   preview.classList.add("hide");
