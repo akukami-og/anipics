@@ -54,9 +54,10 @@ function buildCategories() {
 function renderImages(images) {
   gallery.innerHTML = "";
 
-  images.forEach(img => {
+  images.forEach((img, index) => {
     const card = document.createElement("div");
     card.className = "card";
+    card.style.setProperty("--i", index); // for stagger animation
 
     /* IMAGE */
     const image = document.createElement("img");
@@ -106,7 +107,7 @@ function renderImages(images) {
 
 /* ================= FILTER ================= */
 function filterImages() {
-  const text = searchInput.value.toLowerCase();
+  const text = searchInput.value.toLowerCase().trim();
 
   const filtered = allImages.filter(img => {
     const tagMatch =
@@ -123,15 +124,22 @@ function filterImages() {
 }
 
 /* ================= SEARCH ================= */
-searchInput.oninput = filterImages;
+searchInput.addEventListener("input", filterImages);
 
-/* ================= PREVIEW CLOSE ================= */
-closeBtn.onclick = () => {
-  preview.style.display = "none";
-};
+/* ================= PREVIEW CLOSE (SMOOTH) ================= */
+function closePreview() {
+  preview.classList.add("hide");
+
+  setTimeout(() => {
+    preview.style.display = "none";
+    preview.classList.remove("hide");
+  }, 250);
+}
+
+closeBtn.onclick = closePreview;
 
 preview.onclick = e => {
-  if (e.target === preview) preview.style.display = "none";
+  if (e.target === preview) closePreview();
 };
 
 /* ================= LOADER ================= */
