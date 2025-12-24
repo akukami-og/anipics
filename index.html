@@ -1,1 +1,60 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anime DP</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NEON ANIMATED BACKGROUND -->
+<div class="neon-bg"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="neon-ring"></div>
+  <p>Loading Anime DPs...</p>
+</div>
+
+<h1>ANIME DP</h1>
+
+<!-- SEARCH BAR -->
+<input
+  type="text"
+  id="search"
+  placeholder="Search anime DP..."
+  autocomplete="off"
+/>
+
+<!-- CATEGORIES -->
+<div id="categories"></div>
+
+<!-- GALLERY -->
+<div class="gallery" id="gallery"></div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <p>
+    © <span id="year"></span> Akukami · All rights reserved
+  </p>
+  <p class="credit">
+    Designed & created by <strong>Akukami</strong>
+  </p>
+</footer>
+
+<!-- FULL SCREEN PREVIEW -->
+<div id="preview">
+  <span id="close">✕</span>
+  <img id="previewImg" alt="DP Preview">
+</div>
+
+<!-- ✅ SUPABASE CLIENT (IMPORTANT) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- YOUR SCRIPT -->
+<script src="script.js"></script>
+
+</body>
+</html>
