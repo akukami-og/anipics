@@ -2,7 +2,8 @@
  * SUPABASE SETUP
  ***********************/
 const supabaseUrl = "https://uekehssbugjcdjopietz.supabase.co";
-const supabaseKey = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const supabaseKey =
+  "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 
 const supabase = window.supabase.createClient(
   supabaseUrl,
@@ -24,32 +25,56 @@ const closeBtn = document.getElementById("close");
  ***********************/
 let allImages = [];
 let activeTag = "all";
+let likeMap = {}; // image -> count
 
 /***********************
- * LOAD IMAGES
+ * INIT
  ***********************/
-fetch("images.json")
-  .then(res => res.json())
-  .then(data => {
-    allImages = data;
-    buildCategories();
-    renderImages(allImages);
+init();
+
+async function init() {
+  const imagesRes = await fetch("images.json");
+  allImages = await imagesRes.json();
+
+  await loadLikes();
+  buildCategories();
+  renderImages(allImages);
+
+  hideLoader();
+}
+
+/***********************
+ * LOAD LIKES (ONE CALL)
+ ***********************/
+async function loadLikes() {
+  const { data, error } = await supabase
+    .from("likes")
+    .select("image, count");
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  data.forEach(row => {
+    likeMap[row.image] = row.count;
   });
+}
 
 /***********************
  * BUILD CATEGORIES
  ***********************/
 function buildCategories() {
-  const tagSet = new Set();
+  const tags = new Set();
 
   allImages.forEach(img =>
-    img.tags.forEach(tag => tagSet.add(tag))
+    img.tags.forEach(tag => tags.add(tag))
   );
 
   categoriesDiv.innerHTML =
     `<div class="category active" data-tag="all">All</div>`;
 
-  tagSet.forEach(tag => {
+  tags.forEach(tag => {
     const btn = document.createElement("div");
     btn.className = "category";
     btn.dataset.tag = tag;
@@ -73,39 +98,14 @@ function buildCategories() {
 /***********************
  * RENDER IMAGES
  ***********************/
-async function renderImages(images) {
+function renderImages(images) {
   gallery.innerHTML = "";
 
-  for (let i = 0; i < images.length; i++) {
-    const img = images[i];
-
-    /* GET LIKE COUNT FROM SUPABASE */
-    let { data, error } = await supabase
-      .from("likes")
-      .select("count")
-      .eq("image", img.file)
-      .single();
-
-    if (!data) {
-      // create row if not exists
-      await supabase.from("likes").insert({
-        image: img.file,
-        count: 0
-      });
-      data = { count: 0 };
-    }
-
-    let liked =
-      localStorage.getItem("liked_" + img.file) === "true";
-
-    let count = data.count;
-
-    /* CARD */
+  images.forEach((img, i) => {
     const card = document.createElement("div");
     card.className = "card";
     card.style.setProperty("--i", i);
 
-    /* IMAGE */
     const image = document.createElement("img");
     image.src = "images/" + img.file;
 
@@ -114,15 +114,12 @@ async function renderImages(images) {
       previewImg.src = image.src;
     };
 
-    /* LIKE BUTTON */
+    let liked =
+      localStorage.getItem("liked_" + img.file) === "true";
+
+    let count = likeMap[img.file] || 0;
+
     const likeBtn = document.createElement("button");
-
-    function updateLikeUI() {
-      likeBtn.innerHTML = liked
-        ? `❤️ Liked (<span>${count}</span>)`
-        : `🤍 Like (<span>${count}</span>)`;
-    }
-
     updateLikeUI();
 
     likeBtn.onclick = async () => {
@@ -130,18 +127,26 @@ async function renderImages(images) {
 
       liked = true;
       count++;
+      likeMap[img.file] = count;
 
       localStorage.setItem("liked_" + img.file, "true");
 
       await supabase
         .from("likes")
-        .update({ count })
-        .eq("image", img.file);
+        .upsert(
+          { image: img.file, count },
+          { onConflict: "image" }
+        );
 
       updateLikeUI();
     };
 
-    /* DOWNLOAD */
+    function updateLikeUI() {
+      likeBtn.innerHTML = liked
+        ? `❤️ Liked (<span>${count}</span>)`
+        : `🤍 Like (<span>${count}</span>)`;
+    }
+
     const download = document.createElement("a");
     download.href = image.src;
     download.download = "";
@@ -149,14 +154,14 @@ async function renderImages(images) {
 
     card.append(image, likeBtn, download);
     gallery.appendChild(card);
-  }
+  });
 }
 
 /***********************
  * FILTER
  ***********************/
 function filterImages() {
-  const text = searchInput.value.toLowerCase().trim();
+  const text = searchInput.value.toLowerCase();
 
   const filtered = allImages.filter(img => {
     const tagMatch =
@@ -175,7 +180,7 @@ function filterImages() {
 searchInput.addEventListener("input", filterImages);
 
 /***********************
- * PREVIEW CLOSE
+ * PREVIEW
  ***********************/
 function closePreview() {
   preview.classList.add("hide");
@@ -193,9 +198,10 @@ preview.onclick = e => {
 /***********************
  * LOADER
  ***********************/
-window.onload = () => {
-  document.getElementById("loader").style.display = "none";
-};
+function hideLoader() {
+  const loader = document.getElementById("loader");
+  if (loader) loader.style.display = "none";
+}
 
 /***********************
  * FOOTER YEAR
