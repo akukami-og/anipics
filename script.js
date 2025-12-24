@@ -1,14 +1,12 @@
 /***********************
- * SUPABASE SETUP
+ * SUPABASE SETUP (v2 FIX)
  ***********************/
 const supabaseUrl = "https://uekehssbugjcdjopietz.supabase.co";
 const supabaseKey =
   "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 
-const supabase = window.supabase.createClient(
-  supabaseUrl,
-  supabaseKey
-);
+const { createClient } = supabase;
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
 /***********************
  * ELEMENTS
@@ -19,6 +17,7 @@ const categoriesDiv = document.getElementById("categories");
 const preview = document.getElementById("preview");
 const previewImg = document.getElementById("previewImg");
 const closeBtn = document.getElementById("close");
+const loader = document.getElementById("loader");
 
 /***********************
  * DATA
@@ -33,26 +32,30 @@ let likeMap = {}; // image -> count
 init();
 
 async function init() {
-  const imagesRes = await fetch("images.json");
-  allImages = await imagesRes.json();
+  try {
+    const imagesRes = await fetch("images.json");
+    allImages = await imagesRes.json();
 
-  await loadLikes();
-  buildCategories();
-  renderImages(allImages);
-
-  hideLoader();
+    await loadLikes();
+    buildCategories();
+    renderImages(allImages);
+  } catch (err) {
+    console.error("Init error:", err);
+  } finally {
+    hideLoader();
+  }
 }
 
 /***********************
- * LOAD LIKES (ONE CALL)
+ * LOAD LIKES (ONE QUERY)
  ***********************/
 async function loadLikes() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("likes")
     .select("image, count");
 
   if (error) {
-    console.error(error);
+    console.error("Load likes error:", error);
     return;
   }
 
@@ -84,7 +87,7 @@ function buildCategories() {
 
   categoriesDiv.querySelectorAll(".category").forEach(btn => {
     btn.onclick = () => {
-      document
+      categoriesDiv
         .querySelectorAll(".category")
         .forEach(b => b.classList.remove("active"));
 
@@ -131,7 +134,7 @@ function renderImages(images) {
 
       localStorage.setItem("liked_" + img.file, "true");
 
-      await supabase
+      await supabaseClient
         .from("likes")
         .upsert(
           { image: img.file, count },
@@ -161,7 +164,7 @@ function renderImages(images) {
  * FILTER
  ***********************/
 function filterImages() {
-  const text = searchInput.value.toLowerCase();
+  const text = searchInput.value.toLowerCase().trim();
 
   const filtered = allImages.filter(img => {
     const tagMatch =
@@ -180,7 +183,7 @@ function filterImages() {
 searchInput.addEventListener("input", filterImages);
 
 /***********************
- * PREVIEW
+ * PREVIEW CLOSE
  ***********************/
 function closePreview() {
   preview.classList.add("hide");
@@ -199,7 +202,6 @@ preview.onclick = e => {
  * LOADER
  ***********************/
 function hideLoader() {
-  const loader = document.getElementById("loader");
   if (loader) loader.style.display = "none";
 }
 
