@@ -1,86 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Admin Panel - Upload DP</title>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    body{
-        background:#000;
-        color:white;
-        font-family: Poppins, sans-serif;
-        text-align:center;
-        padding:30px;
+    body{background:#000;color:#fff;font-family:poppins;text-align:center}
+    .box{margin-top:50px;width:90%;max-width:400px;margin:auto}
+    input,select,button{
+        width:100%;padding:10px;margin-top:10px;border:none;
+        border-radius:5px;font-size:16px
     }
-    #panel{ display:none; }
-    input,button{
-        padding:10px;
-        margin:5px;
-        border:none;
-        border-radius:5px;
-        font-size:16px;
-    }
-    button{
-        background:red;
-        color:white;
-        cursor:pointer;
-    }
-    .box{
-        background:#111;
-        padding:20px;
-        border-radius:10px;
-        width:90%;
-        max-width:450px;
-        margin:auto;
-        margin-top:30px;
-    }
+    button{background:#ff0044;color:#fff;cursor:pointer}
 </style>
 </head>
 <body>
 
-<h2>Admin Login</h2>
+<h2>Admin Upload</h2>
+<p>Enter password to continue</p>
+
 <input type="password" id="pass" placeholder="Enter Admin Password">
 <button onclick="login()">Login</button>
 
-<div id="panel" class="box">
-    <h2>Upload New Anime DP</h2>
-    <input type="file" id="imgFile"><br>
-    <input type="text" id="tags" placeholder="Tags example: anime-boy,dark"><br>
-    <button onclick="saveImage()">Upload + Add</button>
-    <p style="opacity:.7">Image auto goes to top | updates images.json</p>
+<div id="panel" style="display:none" class="box">
+    <h3>Upload Image</h3>
+
+    <input type="file" id="imageFile" accept="image/*">
+
+    <label style="float:left;margin-top:20px">Select Tags:</label>
+    <select id="tags" multiple size="6">
+        <option value="animeboy">Anime Boy</option>
+        <option value="animegirl">Anime Girl</option>
+        <option value="sad">Sad</option>
+        <option value="alone">Alone</option>
+        <option value="dark">Dark</option>
+        <option value="happy">Happy</option>
+    </select>
+
+    <button onclick="uploadImage()">Upload</button>
 </div>
 
 <script>
-// CHANGE YOUR PASSWORD HERE
-const ADMIN_PASS = "AKUMA123";
+const supabaseUrl = "YOUR_URL";
+const supabaseKey = "YOUR_KEY"; 
+const supabase = supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
+// LOGIN
 function login(){
-    if(document.getElementById("pass").value===ADMIN_PASS){
+    if(document.getElementById("pass").value==="AKUMA123"){ 
         document.getElementById("panel").style.display="block";
-    } else alert("❌ Wrong Password");
+    }else{
+        alert("Wrong password");
+    }
 }
 
-// UPLOAD IMAGE + UPDATE JSON (manual GitHub method)
-async function saveImage(){
-    const file = document.getElementById("imgFile").files[0];
-    const tags = document.getElementById("tags").value.split(",");
+// UPLOAD IMAGE
+async function uploadImage(){
+    const fileInput=document.getElementById("imageFile").files[0];
+    const tags=[...document.getElementById("tags").selectedOptions].map(o=>o.value);
 
-    if(!file) return alert("Select an image first");
-    alert(`
-📌 Steps to complete upload:
+    if(!fileInput) return alert("Select an image first");
 
-1. Go to GitHub → images folder → Upload this file:
-➡ `+file.name+`
+    const fileName=Date.now()+"_"+fileInput.name;
 
-2. Then open images.json and add this object at top:
+    // upload to storage (or later add bucket)
+    const { data,error }=await supabase.storage.from("images").upload(fileName,fileInput);
 
-{
- "file":"`+file.name+`",
- "tags":`+JSON.stringify(tags)+`
-},
+    if(error) return alert("Upload error: "+error.message);
 
-(Place ABOVE all others for newest first)
-    `);
+    await supabase.from("images").insert({file:fileName,tags});
+
+    alert("Uploaded Successfully 🎉");
 }
 </script>
-
 </body>
 </html>
