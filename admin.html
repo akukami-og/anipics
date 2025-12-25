@@ -1,77 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Admin Panel</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-    body{background:#000;color:#fff;font-family:poppins;text-align:center}
-    .box{margin-top:50px;width:90%;max-width:400px;margin:auto}
-    input,select,button{
-        width:100%;padding:10px;margin-top:10px;border:none;
-        border-radius:5px;font-size:16px
-    }
-    button{background:#ff0044;color:#fff;cursor:pointer}
-</style>
+  <meta charset="UTF-8">
+  <title>Admin Upload Panel</title>
+  <style>
+    body { background:#111; color:#fff; font-family:Arial; padding:20px; }
+    input,button { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:none; }
+    button{ background:#ff004c; color:white; font-weight:bold; cursor:pointer;}
+    button:hover{ opacity:.8; }
+    .box{ max-width:450px; margin:auto; background:#222; padding:20px; border-radius:8px; }
+  </style>
 </head>
 <body>
 
-<h2>Admin Upload</h2>
-<p>Enter password to continue</p>
+<div class="box">
+  <h2>🚀 Admin Upload Panel</h2>
 
-<input type="password" id="pass" placeholder="Enter Admin Password">
-<button onclick="login()">Login</button>
+  <input type="file" id="fileInput">
+  <input type="text" id="fileName" placeholder="filename.jpg">
+  <input type="text" id="tags" placeholder="Tags (anime,boy,dark)">
+  <button id="uploadBtn">Upload</button>
 
-<div id="panel" style="display:none" class="box">
-    <h3>Upload Image</h3>
-
-    <input type="file" id="imageFile" accept="image/*">
-
-    <label style="float:left;margin-top:20px">Select Tags:</label>
-    <select id="tags" multiple size="6">
-        <option value="animeboy">Anime Boy</option>
-        <option value="animegirl">Anime Girl</option>
-        <option value="sad">Sad</option>
-        <option value="alone">Alone</option>
-        <option value="dark">Dark</option>
-        <option value="happy">Happy</option>
-    </select>
-
-    <button onclick="uploadImage()">Upload</button>
+  <p id="status"></p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const supabaseUrl = "YOUR_URL";
-const supabaseKey = "YOUR_KEY"; 
-const supabase = supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+// ---------- SUPABASE CONFIG ----------
+const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const bucketName = "images";  // bucket you created
 
-// LOGIN
-function login(){
-    if(document.getElementById("pass").value==="AKUMA123"){ 
-        document.getElementById("panel").style.display="block";
-    }else{
-        alert("Wrong password");
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+// ---------- HANDLE UPLOAD ----------
+document.getElementById("uploadBtn").onclick = async () => {
+    const file = document.getElementById("fileInput").files[0];
+    const name = document.getElementById("fileName").value.trim();
+    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
+    const status = document.getElementById("status");
+
+    if(!file || !name){ 
+        status.innerHTML="❌ File name required"; 
+        return;
     }
-}
 
-// UPLOAD IMAGE
-async function uploadImage(){
-    const fileInput=document.getElementById("imageFile").files[0];
-    const tags=[...document.getElementById("tags").selectedOptions].map(o=>o.value);
+    status.innerHTML="Uploading... ⏳";
 
-    if(!fileInput) return alert("Select an image first");
+    // 1️⃣ Upload to bucket
+    let { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(name, file, { upsert:true });
 
-    const fileName=Date.now()+"_"+fileInput.name;
+    if(uploadError){
+        status.innerHTML="Upload failed ❌";
+        return;
+    }
 
-    // upload to storage (or later add bucket)
-    const { data,error }=await supabase.storage.from("images").upload(fileName,fileInput);
+    // 2️⃣ Insert into DB
+    await supabase.from("images").insert({
+        file: name,
+        tags: tags
+    });
 
-    if(error) return alert("Upload error: "+error.message);
-
-    await supabase.from("images").insert({file:fileName,tags});
-
-    alert("Uploaded Successfully 🎉");
-}
+    status.innerHTML="✅ Uploaded Successfully!";
+};
 </script>
+
 </body>
 </html>
