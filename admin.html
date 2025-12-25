@@ -46,22 +46,20 @@
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
+    <script type="module">
+/*************** IMPORT SUPABASE V2 ***************/
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-/*************** SUPABASE INIT ***************/
 const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const bucketName="images";
+const bucketName = "images";
 
 /*************** PASSWORD ***************/
 const ADMIN_PASS = "Akukamithelegend";
 
 /*************** LOGIN ***************/
-function login(){
+window.login = function(){
     const input=document.getElementById("pass").value;
     if(input===ADMIN_PASS){
         document.getElementById("loginBox").style.display="none";
@@ -78,23 +76,25 @@ document.getElementById("uploadBtn").onclick= async()=>{
     const tags=document.getElementById("tags").value.split(",").map(t=>t.trim());
     const status=document.getElementById("status");
 
-    if(!file){status.innerHTML="⚠ Choose a file";return;}
+    if(!file){status.innerHTML="⚠ Select a file";return;}
 
-    let fileName=customName!==""?customName:file.name;
+    let fileName = customName!==""?customName:file.name;
     fileName=fileName.replace(/\s+/g,"_").toLowerCase();
 
     status.innerHTML="Uploading...⏳"; status.style.color="#fff";
 
     let {error}=await supabase.storage.from(bucketName).upload(fileName,file,{upsert:true});
-    if(error){status.innerHTML="❌ Upload failed";status.style.color="#f55";return;}
+    if(error){status.innerHTML="❌ Upload Failed";status.style.color="#ff4444";return;}
 
     await supabase.from("images").insert({file:fileName,tags:tags});
-    status.innerHTML="✅ Uploaded! Refresh main site to view";status.style.color="#00ff99";
+    status.innerHTML="✅ Uploaded! Refresh site to view.";status.style.color="#00ff99";
 
     document.getElementById("fileInput").value="";
     document.getElementById("fileName").value="";
     document.getElementById("tags").value="";
 };
-</script>
+    </script>
+
+
 </body>
 </html>
