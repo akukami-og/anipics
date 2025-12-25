@@ -2,144 +2,47 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Upload Panel</title>
+<title>Admin Login</title>
 
 <style>
-    body{
-        background:#0d0d0d; color:#fff;
-        font-family:Arial; text-align:center;
-        margin:0; padding:0;
-    }
-    h2{margin-bottom:12px;}
-
-    #loginBox,#uploadPanel{
-        width:90%; max-width:420px;
-        margin:90px auto; padding:22px;
-    }
-
+    body{background:#0d0d0d;color:#fff;font-family:Arial;text-align:center;margin:0;padding:0;}
+    #loginBox,#panel{width:90%;max-width:400px;margin:90px auto;}
     input,button{
-        width:100%; padding:11px; margin:8px 0;
-        border:none; border-radius:6px;
-        background:#222; color:#fff; font-size:15px;
-        outline:none;
+        width:100%;padding:10px;margin:10px 0;border:none;border-radius:6px;background:#222;color:#fff;font-size:16px;
     }
-    button{
-        background:#ff0055;
-        font-weight:bold;
-        cursor:pointer;
-        transition:.2s;
-    }
-    button:hover{opacity:.88;}
-
-    #uploadPanel{
-        display:none;
-        background:#151515;
-        border-radius:10px;
-        animation:fade .3s ease;
-    }
-    #status{ margin-top:10px; font-size:15px; }
-
-    @keyframes fade{
-        from{opacity:0; transform:scale(.97);}
-        to{opacity:1; transform:scale(1);}
-    }
+    button{background:#ff0055;font-weight:bold;cursor:pointer;} button:hover{opacity:.85;}
+    #panel{display:none;}
 </style>
 </head>
 <body>
 
-<!-- 🔐 LOGIN -->
+<h2>Admin Login</h2>
+
 <div id="loginBox">
-    <h2>Admin Login</h2>
     <input type="password" id="pass" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
-    <p id="logStatus" style="color:#ff6666;"></p>
-</div>
-
-<!-- 📤 UPLOAD PANEL -->
-<div id="uploadPanel">
-    <h2>Upload New Anime DP</h2>
-
-    <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="dp47.jpg">
-    <input type="text" id="tags" placeholder="anime,boy,dark">
-
-    <button id="uploadBtn">Upload Now</button>
     <p id="status"></p>
 </div>
 
-<!-- Supabase client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div id="panel">
+    <h2>Logged in ✔</h2>
+    <p>Upload panel will appear once login works</p>
+</div>
 
 <script>
-/******** SUPABASE CONFIG ********/
-const URL = "https://uekehssbugjcdjopietz.supabase.co";
-const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"; // ok for client public
-const BUCKET = "images";
-
-const db = supabase.createClient(URL, KEY);
-
-/******** LOGIN PASSWORD ********/
 const ADMIN_PASS = "Akukamithelegend";
 
-/******** LOGIN FUNCTION ********/
-document.getElementById("loginBtn").onclick = function(){
-    const pass = document.getElementById("pass").value;
+document.getElementById("loginBtn").onclick = ()=>{
+    const p = document.getElementById("pass").value.trim();
 
-    if(pass === ADMIN_PASS){
+    if(p === ADMIN_PASS){
         document.getElementById("loginBox").style.display="none";
-        document.getElementById("uploadPanel").style.display="block";
+        document.getElementById("panel").style.display="block";
     }else{
-        document.getElementById("logStatus").innerText="❌ Wrong password";
+        document.getElementById("status").innerHTML="❌ Wrong Password";
     }
-};
-
-/******** UPLOAD IMAGE ********/
-document.getElementById("uploadBtn").onclick = async function(){
-    const file = document.getElementById("fileInput").files[0];
-    const name = document.getElementById("fileName").value.trim();
-    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
-    const status = document.getElementById("status");
-
-    if(!file || !name){
-        status.style.color="#ff5555";
-        status.innerText="⚠ Select image & enter name!";
-        return;
-    }
-
-    status.style.color="#fff";
-    status.innerText="Uploading... ⏳";
-
-    // Upload to bucket storage
-    let {error:uploadErr} = await db.storage
-        .from(BUCKET)
-        .upload(name, file, { upsert:true });
-
-    if(uploadErr){
-        status.style.color="#ff4444";
-        status.innerText="❌ Upload failed!";
-        console.log(uploadErr);
-        return;
-    }
-
-    // Insert into database table "images"
-    let {error:dbErr} = await db.from("images")
-        .insert([{ file:name, tags:tags }]);
-
-    if(dbErr){
-        status.style.color="#ff4444";
-        status.innerText="❌ DB insert failed!";
-        console.log(dbErr);
-        return;
-    }
-
-    status.style.color="#4dff8c";
-    status.innerText="✅ Upload Successful!";
-
-    // Clear fields
-    document.getElementById("fileInput").value="";
-    document.getElementById("fileName").value="";
-    document.getElementById("tags").value="";
-};
+}
 </script>
+
 </body>
 </html>
