@@ -20,46 +20,50 @@ input{background:#222;color:#fff;}
 button{background:#ff0055;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.85;}
 #panel{display:none;background:#161616;border-radius:10px;}
-#status{margin-top:10px;color:#0f0;}
+#status{margin-top:10px;font-size:15px;}
 </style>
 </head>
 
 <body>
 
 <h2>Admin Login</h2>
+
 <div id="loginBox">
     <input type="password" id="pass" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
-    <p id="logStatus" style="color:#ff5555;"></p>
+    <p id="logStatus" style="color:#ff4444;"></p>
 </div>
 
 <div id="panel">
     <h2>Upload New Anime DP</h2>
+
     <input type="file" id="file">
     <input type="text" id="name" placeholder="dp50.jpg">
     <input type="text" id="tags" placeholder="anime,boy,dark">
+
     <button id="upload">Upload</button>
     <p id="status"></p>
 </div>
 
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-// -------- Supabase Settings --------
+// ------------------ Supabase ------------------
 const URL = "https://uekehssbugjcdjopietz.supabase.co";
 const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const db = supabase.createClient(URL, KEY);
+const { createClient } = supabase;
+const db = createClient(URL, KEY);
 const bucket = "images";
 
-// -------- Password --------
-const PASS = "Akukamithelegend";
+// ------------------ PASSWORD ------------------
+const PASS = "@kumaad";   // <== Final working password
 
-// -------- LOGIN --------
-document.getElementById("loginBtn").onclick = () => {
-    let val = document.getElementById("pass").value;
-    console.log("Entered:", val); // debug
+// ------------------ LOGIN ------------------
+document.getElementById("loginBtn").onclick = ()=>{
+    let pwd = document.getElementById("pass").value.trim();
 
-    if(val === PASS){
-        console.log("Login Successful");
+    if(pwd === PASS){
         document.getElementById("loginBox").style.display="none";
         document.getElementById("panel").style.display="block";
     }else{
@@ -67,25 +71,47 @@ document.getElementById("loginBtn").onclick = () => {
     }
 };
 
-// -------- UPLOAD --------
-document.getElementById("upload").onclick = async () => {
-    let file = document.getElementById("file").files[0];
-    let name = document.getElementById("name").value.trim();
-    let tags = document.getElementById("tags").value.split(",").map(x=>x.trim());
-    let status = document.getElementById("status");
+// ------------------ UPLOAD ------------------
+document.getElementById("upload").onclick = async ()=>{
+    const file = document.getElementById("file").files[0];
+    const name = document.getElementById("name").value.trim();
+    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
+    const status = document.getElementById("status");
 
     if(!file || !name){
-        status.innerHTML="⚠ Enter filename + choose image"; return;
+        status.innerHTML="⚠ Enter filename + select file";
+        status.style.color="#ff4444";
+        return;
     }
 
-    status.innerHTML="Uploading...⏳";
+    status.innerHTML="Uploading ⏳...";
+    status.style.color="#fff";
 
-    let { error } = await db.storage.from(bucket).upload(name, file, { upsert:true });
-    if(error){ status.innerHTML="❌ Upload Failed"; return; }
+    // 1️⃣ upload to storage
+    let { error:uploadErr } = await db.storage.from(bucket).upload(name,file,{ upsert:true });
 
-    await db.from("images").insert({ file:name, tags:tags });
+    if(uploadErr){
+        status.innerHTML="❌ Upload Failed";
+        status.style.color="#ff4444";
+        return;
+    }
+
+    // 2️⃣ insert into DB
+    let { error:dbErr } = await db.from("images").insert({ file:name,tags:tags });
+
+    if(dbErr){
+        status.innerHTML="❌ DB Insert Failed";
+        status.style.color="#ff4444";
+        return;
+    }
 
     status.innerHTML="✅ Uploaded Successfully!";
+    status.style.color="#54ff9f";
+
+    // clear fields
+    document.getElementById("file").value="";
+    document.getElementById("name").value="";
+    document.getElementById("tags").value="";
 };
 </script>
 </body>
