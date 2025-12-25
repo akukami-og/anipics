@@ -1,21 +1,84 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin</title>
+<title>Admin Panel - Upload DP</title>
+<style>
+    body{
+        background:#000;
+        color:white;
+        font-family: Poppins, sans-serif;
+        text-align:center;
+        padding:30px;
+    }
+    #panel{ display:none; }
+    input,button{
+        padding:10px;
+        margin:5px;
+        border:none;
+        border-radius:5px;
+        font-size:16px;
+    }
+    button{
+        background:red;
+        color:white;
+        cursor:pointer;
+    }
+    .box{
+        background:#111;
+        padding:20px;
+        border-radius:10px;
+        width:90%;
+        max-width:450px;
+        margin:auto;
+        margin-top:30px;
+    }
+</style>
 </head>
-<body style="background:black;color:white;text-align:center">
+<body>
 
 <h2>Admin Login</h2>
-<input type="password" id="p">
+<input type="password" id="pass" placeholder="Enter Admin Password">
 <button onclick="login()">Login</button>
 
+<div id="panel" class="box">
+    <h2>Upload New Anime DP</h2>
+    <input type="file" id="imgFile"><br>
+    <input type="text" id="tags" placeholder="Tags example: anime-boy,dark"><br>
+    <button onclick="saveImage()">Upload + Add</button>
+    <p style="opacity:.7">Image auto goes to top | updates images.json</p>
+</div>
+
 <script>
+// CHANGE YOUR PASSWORD HERE
+const ADMIN_PASS = "AKUMA123";
+
 function login(){
-  if(document.getElementById("p").value==="AKUMA123"){
-    alert("Upload images to /images folder and add name in images.json");
-  } else {
-    alert("Wrong password");
-  }
+    if(document.getElementById("pass").value===ADMIN_PASS){
+        document.getElementById("panel").style.display="block";
+    } else alert("❌ Wrong Password");
+}
+
+// UPLOAD IMAGE + UPDATE JSON (manual GitHub method)
+async function saveImage(){
+    const file = document.getElementById("imgFile").files[0];
+    const tags = document.getElementById("tags").value.split(",");
+
+    if(!file) return alert("Select an image first");
+    alert(`
+📌 Steps to complete upload:
+
+1. Go to GitHub → images folder → Upload this file:
+➡ `+file.name+`
+
+2. Then open images.json and add this object at top:
+
+{
+ "file":"`+file.name+`",
+ "tags":`+JSON.stringify(tags)+`
+},
+
+(Place ABOVE all others for newest first)
+    `);
 }
 </script>
 
