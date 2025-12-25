@@ -98,17 +98,17 @@
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/***************  SUPABASE CONFIG  ***************/
-const supabase = supabase.createClient(
-   "https://uekehssbugjcdjopietz.supabase.co",
-   "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"
-);
+/***************  SUPABASE CONFIG (FIXED) ***************/
+const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 
-const bucketName = "images";   // ← Your bucket name
+const { createClient } = window.supabase;          // ✅ Correct import
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const bucketName = "images";
 
 /***************  PASSWORD LOGIN  ***************/
 const ADMIN_PASS = "Akukamithelegend";
@@ -133,23 +133,22 @@ document.getElementById("uploadBtn").onclick = async ()=>{
     const status = document.getElementById("status");
 
     if(!file){
-        status.innerHTML="⚠ Select an image first";
+        status.innerHTML="⚠ Select an image";
         status.style.color="#ff6b6b";
         return;
     }
 
-    // auto create file name if empty
+    // Auto-generate filename if not given
     let fileName = manualName !== "" ? manualName : file.name;
-
-    // normalize filename to avoid issues
     fileName = fileName.replace(/\s+/g,"_").toLowerCase();
 
     status.innerHTML="Uploading... ⏳";
     status.style.color="#fff";
 
-    // 1️⃣ Upload to Storage
+    // 1️⃣ Upload Image
     let { error: uploadError } = await supabase.storage
-      .from(bucketName).upload(fileName, file,{upsert:true});
+      .from(bucketName)
+      .upload(fileName, file, { upsert:true });
 
     if(uploadError){
         status.innerHTML="❌ Upload Failed";
@@ -157,18 +156,18 @@ document.getElementById("uploadBtn").onclick = async ()=>{
         return;
     }
 
-    // 2️⃣ Store DB record
+    // 2️⃣ Insert DB entry
     await supabase.from("images").insert({file:fileName,tags:tags});
 
-    status.innerHTML="✅ Upload Successful!";
+    status.innerHTML="✅ Uploaded Successfully!";
     status.style.color="#00ff99";
 
-    // Reset form
+    // Reset
     document.getElementById("fileInput").value="";
     document.getElementById("fileName").value="";
     document.getElementById("tags").value="";
 };
-</script>
+            </script>
 
 </body>
 </html>
