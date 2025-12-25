@@ -1,5 +1,5 @@
 /***********************
- * SUPABASE SETUP (v2)
+ * SUPABASE SETUP
  ***********************/
 const supabaseUrl = "https://uekehssbugjcdjopietz.supabase.co";
 const supabaseKey = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
@@ -22,8 +22,8 @@ const loader = document.getElementById("loader");
  * DATA
  ***********************/
 let allImages = [];
+let likeMap = {};
 let activeTag = "all";
-let likeMap = {}; // image -> count
 
 /***********************
  * INIT
@@ -31,181 +31,142 @@ let likeMap = {}; // image -> count
 init();
 
 async function init() {
-  try {
-    const res = await fetch("images.json");
-    allImages = await res.json();
+  await loadImages();         // from Supabase DB
+  await loadLikes();          // like counts
+  buildCategories();
+  renderImages(allImages);
+  hideLoader();
+  enableRealtimeLikes();      // live update like count
+}
 
-    // 🔥 Show newest uploaded images first
-    allImages.reverse();
+/***********************
+ * LOAD IMAGES FROM SUPABASE
+ ***********************/
+async function loadImages() {
+  const { data, error } = await supabaseClient
+    .from("images")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    buildCategories();
-    renderImages(allImages);
-    hideLoader();
+  if (error) return console.error(error);
 
-    // Load likes from database (async)
-    await loadLikes();
-    renderImages(allImages); // update counts after loading
-
-    enableRealtimeLikes(); // 👈 live updates here
-
-  } catch (err) {
-    console.error(err);
-    hideLoader();
-  }
+  // convert DB format → JS format
+  allImages = data.map(x => ({
+    file: x.file,
+    tags: x.tags ? x.tags : []
+  }));
 }
 
 /***********************
  * LOAD LIKE DATA
  ***********************/
 async function loadLikes() {
-  const { data, error } = await supabaseClient
-    .from("likes")
-    .select("*");
-
-  if (error) return console.error(error);
-
+  const { data } = await supabaseClient.from("likes").select("*");
+  if (!data) return;
   data.forEach(row => likeMap[row.image] = row.count);
 }
 
-/***********************
+/*********************** 
  * REALTIME LIKE UPDATES
  ***********************/
 function enableRealtimeLikes() {
   supabaseClient
     .channel("likes-live")
-    .on(
-      "postgres_changes",
+    .on("postgres_changes",
       { event: "UPDATE", schema: "public", table: "likes" },
-      (payload) => {
-        const { image, count } = payload.new;
-        likeMap[image] = count;
-
-        // Update UI live
-        const btn = document.querySelector(`button[data-img='${image}']`);
-        if (btn) btn.innerHTML = `❤️ Liked (<span>${count}</span>)`;
-      }
-    )
+      payload => {
+        likeMap[payload.new.image] = payload.new.count;
+        const btn = document.querySelector(`button[data-img="${payload.new.image}"]`);
+        if (btn) btn.innerHTML = `❤️ Liked (${payload.new.count})`;
+      })
     .subscribe();
 }
 
 /***********************
- * BUILD CATEGORY LIST
+ * BUILD CATEGORY FILTER
  ***********************/
 function buildCategories() {
   const tags = new Set();
   allImages.forEach(img => img.tags.forEach(t => tags.add(t)));
 
   categoriesDiv.innerHTML = `<div class="category active" data-tag="all">All</div>`;
-
-  tags.forEach(tag => {
-    const div = document.createElement("div");
-    div.className = "category";
-    div.dataset.tag = tag;
-    div.textContent = tag;
-    categoriesDiv.appendChild(div);
-  });
-
-  document.querySelectorAll(".category").forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll(".category").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      activeTag = btn.dataset.tag;
+  tags.forEach(t => {
+    let el = document.createElement("div");
+    el.className = "category";
+    el.dataset.tag = t;
+    el.innerText = t;
+    el.onclick = () => {
+      activeTag = t;
+      document.querySelectorAll(".category").forEach(b=>b.classList.remove("active"));
+      el.classList.add("active");
       filterImages();
     };
+    categoriesDiv.appendChild(el);
   });
 }
 
 /***********************
- * RENDER IMAGES
+ * RENDER IMAGES UI
  ***********************/
 function renderImages(images) {
   gallery.innerHTML = "";
 
-  images.forEach((img, i) => {
+  images.forEach((img,i) =>{
     const card = document.createElement("div");
-    card.className = "card";
-    card.style.setProperty("--i", i);
+    card.className="card";
+    card.style.setProperty("--i",i);
 
     const image = document.createElement("img");
-    image.src = "images/" + img.file;
-    image.onclick = () => {
-      preview.style.display = "flex";
-      previewImg.src = image.src;
+    image.src=`${supabaseUrl}/storage/v1/object/public/anipics/${img.file}`;
+    image.onclick=()=>{
+      preview.style.display="flex";
+      previewImg.src=image.src;
     };
 
-    let liked = localStorage.getItem("liked_" + img.file) === "true";
-    let count = likeMap[img.file] || 0;
+    let liked = localStorage.getItem("liked_"+img.file)==="true";
+    let count = likeMap[img.file]||0;
 
-    const likeBtn = document.createElement("button");
-    likeBtn.dataset.img = img.file; // needed for realtime update
+    const likeBtn=document.createElement("button");
+    likeBtn.dataset.img=img.file;
+    likeBtn.innerHTML = liked?`❤️ Liked (${count})`:`🤍 Like (${count})`;
 
-    updateLikeUI();
-
-    likeBtn.onclick = async () => {
-      if (liked) return;
-      liked = true;
-      count++;
-      likeMap[img.file] = count;
-
-      localStorage.setItem("liked_" + img.file, "true");
+    likeBtn.onclick = async ()=>{
+      if(liked) return;
+      liked=true; count++;
+      likeMap[img.file]=count;
+      localStorage.setItem("liked_"+img.file,"true");
 
       await supabaseClient.from("likes").upsert(
-        { image: img.file, count },
-        { onConflict: "image" }
+        {image:img.file,count},
+        {onConflict:"image"}
       );
-
-      updateLikeUI();
+      likeBtn.innerHTML=`❤️ Liked (${count})`;
     };
 
-    function updateLikeUI() {
-      likeBtn.innerHTML = liked
-        ? `❤️ Liked (<span>${count}</span>)`
-        : `🤍 Like (<span>${count}</span>)`;
-    }
+    const download=document.createElement("a");
+    download.href=image.src;
+    download.download="";
+    download.textContent="⬇ Download";
 
-    const download = document.createElement("a");
-    download.href = image.src;
-    download.download = "";
-    download.textContent = "⬇ Download";
-
-    card.append(image, likeBtn, download);
+    card.append(image,likeBtn,download);
     gallery.appendChild(card);
   });
 }
 
 /***********************
- * SEARCH + FILTER
+ * FILTER + SEARCH
  ***********************/
-function filterImages() {
-  const text = searchInput.value.toLowerCase().trim();
-
-  const filtered = allImages.filter(img =>
-    (activeTag === "all" || img.tags.includes(activeTag)) &&
-    (img.file.toLowerCase().includes(text) ||
-     img.tags.some(t => t.includes(text)))
-  );
-
-  renderImages(filtered);
+function filterImages(){
+  const q=searchInput.value.toLowerCase();
+  renderImages(allImages.filter(img =>
+    (activeTag==="all"||img.tags.includes(activeTag)) &&
+    (img.file.toLowerCase().includes(q)||img.tags.some(t=>t.includes(q)))
+  ));
 }
+searchInput.oninput=filterImages;
 
-searchInput.addEventListener("input", filterImages);
-
-/***********************
- * PREVIEW CLOSE
- ***********************/
-closeBtn.onclick = closePreview;
-preview.onclick = e => { if (e.target === preview) closePreview(); };
-
-function closePreview() {
-  preview.classList.add("hide");
-  setTimeout(() => {
-    preview.style.display = "none";
-    preview.classList.remove("hide");
-  }, 250);
-}
-
-/***********************
- * LOADER + YEAR
- ***********************/
-function hideLoader() { loader.style.display = "none"; }
-document.getElementById("year").textContent = new Date().getFullYear();
+/***********************/
+function hideLoader(){loader.style.display="none";}
+closeBtn.onclick=()=>preview.style.display="none";
+preview.onclick=e=>{if(e.target===preview)preview.style.display="none";}
+document.getElementById("year").textContent=new Date().getFullYear();
