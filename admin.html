@@ -2,25 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel Upload</title>
+<title>Admin Upload Panel</title>
 
 <style>
-body{
-    background:#0a0a0a;color:#fff;text-align:center;font-family:Arial;
-    margin:0;padding:0;
-}
-#loginBox,#panel{
-    width:90%;max-width:420px;margin:80px auto;padding:25px;
-}
-input,button{
-    width:100%;padding:10px;margin:7px 0;font-size:15px;
-    border:none;border-radius:6px;outline:none;
-}
+body{background:#0b0b0b;color:#fff;font-family:Arial;text-align:center;margin:0;}
+#loginBox,#panel{width:90%;max-width:420px;margin:80px auto;padding:25px;}
+input,button{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:15px;}
 input{background:#222;color:#fff;}
-button{background:#ff0055;color:white;font-weight:bold;cursor:pointer;}
-button:hover{opacity:.85;}
-#panel{display:none;background:#171717;border-radius:10px;}
-#status{margin-top:12px;font-size:15px;}
+button{background:#ff0055;color:#fff;font-weight:bold;cursor:pointer;} button:hover{opacity:.85;}
+#panel{display:none;background:#161616;border-radius:10px;}
+#status{margin-top:10px;font-size:15px;}
 </style>
 </head>
 
@@ -29,98 +20,73 @@ button:hover{opacity:.85;}
 <h2>Admin Login</h2>
 
 <div id="loginBox">
-    <input type="password" id="pass" placeholder="Enter Password">
+    <input type="password" id="password" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
-    <p id="logStatus" style="color:#ff4d4d;"></p>
+    <p id="loginMsg" style="color:#ff4444;"></p>
 </div>
 
 <div id="panel">
-    <h2>Upload New Anime DP</h2>
-
-    <input type="file" id="file" accept="image/*">
-    <input type="text" id="name" placeholder="dp51.jpg">
-    <input type="text" id="tags" placeholder="anime,boy,blue">
-
-    <button id="upload">Upload</button>
+    <h2>Upload Anime DP</h2>
+    <input type="file" id="fileInput" accept="image/*">
+    <input type="text" id="fileName" placeholder="dp53.jpg">
+    <input type="text" id="tags" placeholder="anime,boy,dark">
+    <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
+<!-- Correct Supabase import -->
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// =================== SUPABASE ===================
-const URL = "https://uekehssbugjcdjopietz.supabase.co";
-const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const bucket = "images";
+const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const PASS = "@kumaad";             // <-- Your password
+const BUCKET = "images";            // <-- bucket name
 
-const { createClient } = supabase;
-const db = createClient(URL, KEY); // FIXED V2 METHOD
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/******** LOGIN ********/
+document.getElementById("loginBtn").onclick = () =>{
+    const val = document.getElementById("password").value;
+    if(val === PASS){
+        document.getElementById("loginBox").style.display="none";
+        document.getElementById("panel").style.display="block";
+    } else {
+        document.getElementById("loginMsg").innerText="❌ Wrong Password";
+    }
+};
 
-// =================== ADMIN PASSWORD ===================
-const PASS = "@kumaad";   // final password
+/******** UPLOAD ********/
+document.getElementById("uploadBtn").onclick = async ()=>{
+    const file = document.getElementById("fileInput").files[0];
+    const name = document.getElementById("fileName").value.trim();
+    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
+    const status = document.getElementById("status");
 
-
-// =================== LOGIN ===================
-document.getElementById("loginBtn").onclick = ()=>{
-   let p = document.getElementById("pass").value;
-
-   if(p === PASS){
-       document.getElementById("loginBox").style.display="none";
-       document.getElementById("panel").style.display="block";
-   } else {
-       document.getElementById("logStatus").innerText="❌ Wrong Password";
-   }
-}
-
-
-// =================== UPLOAD ===================
-document.getElementById("upload").onclick = async()=>{
-   const file = document.getElementById("file").files[0];
-   const name = document.getElementById("name").value.trim();
-   const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
-   const status = document.getElementById("status");
-
-   if(!file || !name){
-        status.style.color="#ff6b6b";
-        status.innerText="⚠ Select file & enter filename";
+    if(!file || !name){
+        status.innerHTML="⚠ Select file & set filename";
+        status.style.color="#ff6666";
         return;
-   }
+    }
 
-   status.style.color="#fff";
-   status.innerText="Uploading... ⏳";
+    status.innerHTML="Uploading... ⏳";
+    status.style.color="#fff";
 
+    //1️⃣ upload to storage bucket
+    const { error:uploadErr } = await db.storage.from(BUCKET).upload(name, file,{ upsert:true });
+    if(uploadErr){ status.innerHTML="❌ Upload Failed"; status.style.color="red"; return; }
 
-   // 1️⃣ Upload to Bucket
-   let { error:uploadErr } = await db.storage.from(bucket)
-   .upload(name, file, { upsert:true });
+    //2️⃣ insert into images table
+    const { error:dbErr } = await db.from("images").insert({ file:name, tags:tags });
+    if(dbErr){ status.innerHTML="❌ DB insert failed"; status.style.color="red"; return;}
 
-   if(uploadErr){
-        status.style.color="#ff6b6b";
-        status.innerText="❌ Upload Failed";
-        return;
-   }
+    status.innerHTML="✅ Uploaded Successfully!";
+    status.style.color="#4dff7a";
 
-   // 2️⃣ Insert into DB
-   let { error:dbErr } = await db.from("images").insert({
-       file:name,
-       tags:tags
-   });
-
-   if(dbErr){
-        status.style.color="#ff6b6b";
-        status.innerText="❌ DB Insert Failed";
-        return;
-   }
-
-   status.style.color="#4dff88";
-   status.innerText="✅ Upload Successful!";
-
-   document.getElementById("file").value="";
-   document.getElementById("name").value="";
-   document.getElementById("tags").value="";
-}
-
+    document.getElementById("fileInput").value="";
+    document.getElementById("fileName").value="";
+    document.getElementById("tags").value="";
+};
 </script>
 </body>
 </html>
