@@ -10,16 +10,30 @@
         font-family:Arial; text-align:center;
         margin:0; padding:0;
     }
-    #loginBox,.box{width:90%;max-width:400px;margin:80px auto;}
-    input,button{
-        width:100%;padding:10px;margin:7px 0;
-        border:none;border-radius:6px;outline:none;
-        background:#222;color:#fff;font-size:15px;
+    h2{margin-bottom:10px;}
+
+    #loginBox,.box{
+        width:90%; max-width:420px;
+        margin:80px auto; padding:20px;
     }
-    button{background:#ff0055;font-weight:bold;cursor:pointer;}
+
+    input,button{
+        width:100%; padding:10px; margin:8px 0;
+        border:none; border-radius:6px; outline:none;
+        background:#222; color:#fff; font-size:15px;
+    }
+    button{
+        background:#ff0055; font-weight:bold;
+        cursor:pointer; transition:.2s;
+    }
     button:hover{opacity:.85;}
-    .box{display:none;background:#181818;padding:20px;border-radius:10px;}
-    #status{margin-top:10px;}
+
+    .box{
+        display:none; background:#151515;
+        border-radius:10px; animation:fade .3s;
+    }
+    #status{ margin-top:10px; font-size:15px; }
+    @keyframes fade{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:scale(1);}}
 </style>
 </head>
 <body>
@@ -37,62 +51,82 @@
     <h2>Upload New Anime DP</h2>
 
     <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="Filename (example dp90.jpg)">
-    <input type="text" id="tags" placeholder="Tags: anime,boy,blue">
+    <input type="text" id="fileName" placeholder="example dp47.jpg">
+    <input type="text" id="tags" placeholder="Tags: anime,boy,dark">
 
     <button onclick="uploadImg()">Upload</button>
     <p id="status"></p>
 </div>
 
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/******** Supabase ********/
-const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
-const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const bucket = "images";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/******** Password ********/
+<script>
+/******** Supabase Config ********/
+const URL = "https://uekehssbugjcdjopietz.supabase.co";
+const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const bucket = "images";
+const db = supabase.createClient(URL, KEY);
+
+/******** Admin Password ********/
 const ADMIN_PASS = "Akukamithelegend";
 
 /******** Login ********/
 function login(){
-    const input = document.getElementById("pass").value;
-
-    if(input === ADMIN_PASS){
+    let x = document.getElementById("pass").value;
+    if(x === ADMIN_PASS){
         document.getElementById("loginBox").style.display="none";
         document.getElementById("uploadPanel").style.display="block";
-    }else{
+    } else {
         document.getElementById("logStatus").innerText="❌ Wrong Password";
     }
 }
 
-/******** Upload ********/
+/******** Upload + Auto Save DB ********/
 async function uploadImg(){
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("fileName").value.trim();
-    const tags = document.getElementById("tags").value.split(",").map(v=>v.trim());
+    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
     const status = document.getElementById("status");
 
     if(!file || !name){
-        status.innerHTML="⚠ Enter filename & select file";
+        status.innerHTML="⚠ Please select a file & enter name";
+        status.style.color="#ff6b6b";
         return;
     }
 
-    status.innerHTML="Uploading... ⏳";
+    status.innerHTML="Uploading ⏳..."; status.style.color="#fff";
 
-    // Upload to bucket
-    let { error } = await supabaseClient.storage.from(bucket).upload(name, file, { upsert:true });
-    if(error){ status.innerHTML="❌ Upload Failed"; return; }
+    // Upload to storage
+    let { error:uploadErr } = await db.storage
+        .from(bucket).upload(name, file, { upsert:true });
 
-    // Insert into DB
-    await supabaseClient.from("images").insert({ file:name, tags:tags });
+    if(uploadErr){
+        status.innerHTML="❌ Storage Upload Failed";
+        status.style.color="#ff6b6b";
+        console.log(uploadErr);
+        return;
+    }
 
-    status.innerHTML="✅ Uploaded Successfully!";
+    // Insert row to DB table 'images'
+    const { error:dbErr } = await db.from("images")
+        .insert([{ file:name, tags:tags }]);
+
+    if(dbErr){
+        status.innerHTML="❌ Database Insert Failed";
+        status.style.color="#ff6b6b";
+        console.log(dbErr);
+        return;
+    }
+
+    status.innerHTML="✅ Upload Successful!";
+    status.style.color="#4dff8c";
+
     document.getElementById("fileInput").value="";
     document.getElementById("fileName").value="";
     document.getElementById("tags").value="";
 }
 </script>
+
 </body>
 </html>
