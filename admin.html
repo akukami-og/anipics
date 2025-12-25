@@ -46,54 +46,66 @@
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
-    <script type="module">
-/*************** IMPORT SUPABASE V2 ***************/
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/***************  SUPABASE INFO  ***************/
 const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); // ← FIXED NAME
 const bucketName = "images";
 
-/*************** PASSWORD ***************/
+/***************  ADMIN PASSWORD  ***************/
 const ADMIN_PASS = "Akukamithelegend";
 
 /*************** LOGIN ***************/
-window.login = function(){
-    const input=document.getElementById("pass").value;
-    if(input===ADMIN_PASS){
+function login(){
+    let input = document.getElementById("pass").value;
+    if(input === ADMIN_PASS){
         document.getElementById("loginBox").style.display="none";
-        document.getElementById("adminPanel").style.display="block";
-    } else {
+        document.querySelector(".box").style.display="block";
+    }else{
         document.getElementById("logStatus").innerHTML="❌ Wrong password";
     }
 }
 
 /*************** UPLOAD ***************/
-document.getElementById("uploadBtn").onclick= async()=>{
-    const file=document.getElementById("fileInput").files[0];
-    const customName=document.getElementById("fileName").value.trim();
-    const tags=document.getElementById("tags").value.split(",").map(t=>t.trim());
-    const status=document.getElementById("status");
+document.getElementById("uploadBtn").onclick = async () => {
+    const file = document.getElementById("fileInput").files[0];
+    const name = document.getElementById("fileName").value.trim();
+    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
+    const status = document.getElementById("status");
 
-    if(!file){status.innerHTML="⚠ Select a file";return;}
+    if(!file || !name){
+        status.innerHTML="⚠ Enter filename & select file";
+        status.style.color="#ff6b6b";
+        return;
+    }
 
-    let fileName = customName!==""?customName:file.name;
-    fileName=fileName.replace(/\s+/g,"_").toLowerCase();
+    status.innerHTML="Uploading... ⏳";
 
-    status.innerHTML="Uploading...⏳"; status.style.color="#fff";
+    // 1️⃣ Upload to Supabase Storage
+    let { error: uploadError } = await client.storage
+        .from(bucketName)
+        .upload(name, file, { upsert:true });
 
-    let {error}=await supabase.storage.from(bucketName).upload(fileName,file,{upsert:true});
-    if(error){status.innerHTML="❌ Upload Failed";status.style.color="#ff4444";return;}
+    if(uploadError){
+        status.innerHTML="❌ Upload Failed";
+        status.style.color="#ff6b6b";
+        return;
+    }
 
-    await supabase.from("images").insert({file:fileName,tags:tags});
-    status.innerHTML="✅ Uploaded! Refresh site to view.";status.style.color="#00ff99";
+    // 2️⃣ Insert into DB
+    await client.from("images").insert({ file:name, tags:tags });
+
+    status.innerHTML="✅ Upload Successful!";
+    status.style.color="#4dff8c";
 
     document.getElementById("fileInput").value="";
     document.getElementById("fileName").value="";
     document.getElementById("tags").value="";
 };
-    </script>
+</script>
 
 
 </body>
