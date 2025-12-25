@@ -2,84 +2,76 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Upload Panel</title>
+<title>Admin Panel | Upload Anime DP</title>
 
 <style>
-body{background:#0d0d0d;color:#fff;font-family:Arial;text-align:center;margin:0;padding-top:60px;}
-.box,input,button{animation:fade .3s;}
-.box{
-    width:90%;max-width:450px;background:#181818;padding:22px;border-radius:10px;margin:auto;display:none;
-}
-#loginBox{width:90%;max-width:300px;margin:auto;}
-input{
-    width:100%;padding:10px;margin:7px 0;border:none;border-radius:6px;background:#333;color:#fff;
-}
-button{
-    width:100%;padding:11px;margin-top:10px;font-weight:bold;border:none;border-radius:6px;
-    background:#ff0055;color:white;cursor:pointer;
-}
-button:hover{opacity:.85;}
-#status{margin-top:10px;}
-@keyframes fade{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:scale(1);}}
+    body{background:#0d0d0d;color:#fff;font-family:Arial;text-align:center;margin:0}
+    h2{margin-bottom:15px;}
+    .box{width:90%;max-width:450px;margin:60px auto;background:#181818;padding:25px;border-radius:10px;display:none}
+    #loginBox{width:90%;max-width:300px;margin:60px auto}
+    input{width:100%;padding:10px;margin:8px 0;background:#333;border:none;border-radius:6px;color:#fff}
+    button{width:100%;padding:11px;margin-top:10px;background:#ff0055;border:none;border-radius:6px;font-weight:bold;color:white;cursor:pointer}
+    button:hover{opacity:.85;}
+    #status{margin-top:10px;}
 </style>
 </head>
 <body>
 
+<!-- Login -->
 <div id="loginBox">
     <h2>Admin Login</h2>
     <input type="password" id="pass" placeholder="Enter Password">
     <button onclick="login()">Login</button>
-    <p id="logStatus" style="color:#ff6b6b;margin-top:5px;"></p>
+    <p id="logStatus" style="color:#ff6b6b;"></p>
 </div>
 
-<div class="box" id="panel">
-    <h2>🚀 Upload Anime Image</h2>
-
+<!-- Upload panel -->
+<div class="box" id="uploadBox">
+    <h2>🚀 Upload New Anime DP</h2>
     <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="dp1.jpg">
+    <input type="text" id="fileName" placeholder="example.jpg">
     <input type="text" id="tags" placeholder="anime,boy,dark">
-
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// 🔥 Supabase Config
-const SUPABASE_URL="https://uekehssbugjcdjopietz.supabase.co";
-const SUPABASE_KEY="sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const client = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+/*** Supabase Config ***/
+const supabase = supabase.createClient(
+    "https://uekehssbugjcdjopietz.supabase.co",
+    "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"
+);
+const bucket="images";
 
-// 🔐 Admin Password
+/*** Login ***/
 const ADMIN_PASS="Akukamithelegend";
-
-// LOGIN FUNCTION
 function login(){
-   let input=document.getElementById("pass").value.trim();
-   if(input===ADMIN_PASS){
-       document.getElementById("loginBox").style.display="none";
-       document.getElementById("panel").style.display="block";
-   }else{
-       document.getElementById("logStatus").innerHTML="❌ Wrong password";
-   }
+    let p=document.getElementById("pass").value;
+    if(p===ADMIN_PASS){
+        document.getElementById("loginBox").style.display="none";
+        document.getElementById("uploadBox").style.display="block";
+    }else{
+        document.getElementById("logStatus").innerHTML="❌ Wrong password";
+    }
 }
 
-// UPLOAD FUNCTION
-document.getElementById("uploadBtn").onclick = async ()=>{
+/*** Upload ***/
+document.getElementById("uploadBtn").onclick=async()=>{
     const file=document.getElementById("fileInput").files[0];
     const name=document.getElementById("fileName").value.trim();
-    const tags=document.getElementById("tags").value.split(",").map(x=>x.trim());
+    const tags=document.getElementById("tags").value.split(",").map(t=>t.trim());
     const status=document.getElementById("status");
 
-    if(!file||!name){status.innerHTML="⚠ Select file & enter name";return;}
+    if(!file||!name){status.innerHTML="⚠ Provide file & name";return;}
 
     status.innerHTML="Uploading...";
 
-    let {error} = await client.storage.from("images").upload(name,file,{upsert:true});
-    if(error){status.innerHTML="❌ Upload Failed";return;}
+    let {error:uploadError}=await supabase.storage.from(bucket).upload(name,file,{upsert:true});
+    if(uploadError){status.innerHTML="❌ Upload Failed";return;}
 
-    await client.from("images").insert({file:name,tags:tags});
-    status.innerHTML="✅ Uploaded Successfully";
+    await supabase.from("images").insert({file:name,tags:tags});
+    status.innerHTML="✅ Uploaded Successfully!";
 };
 </script>
 </body>
