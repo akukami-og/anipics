@@ -2,47 +2,91 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Login</title>
+<title>Admin Upload Panel</title>
 
 <style>
-    body{background:#0d0d0d;color:#fff;font-family:Arial;text-align:center;margin:0;padding:0;}
-    #loginBox,#panel{width:90%;max-width:400px;margin:90px auto;}
-    input,button{
-        width:100%;padding:10px;margin:10px 0;border:none;border-radius:6px;background:#222;color:#fff;font-size:16px;
-    }
-    button{background:#ff0055;font-weight:bold;cursor:pointer;} button:hover{opacity:.85;}
-    #panel{display:none;}
+body{
+    background:#0a0a0a;color:#fff;font-family:Arial;text-align:center;
+    margin:0;padding:0;
+}
+#loginBox,#panel{
+    width:90%;max-width:420px;margin:80px auto;padding:25px;
+}
+input,button{
+    width:100%;padding:10px;margin:8px 0;font-size:15px;
+    border:none;border-radius:6px;outline:none;
+}
+input{background:#222;color:#fff;}
+button{background:#ff0055;color:#fff;font-weight:bold;cursor:pointer;}
+button:hover{opacity:.85;}
+#panel{display:none;background:#161616;border-radius:10px;}
+#status{margin-top:10px;color:#0f0;}
 </style>
 </head>
+
 <body>
 
 <h2>Admin Login</h2>
-
 <div id="loginBox">
     <input type="password" id="pass" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
-    <p id="status"></p>
+    <p id="logStatus" style="color:#ff5555;"></p>
 </div>
 
 <div id="panel">
-    <h2>Logged in ✔</h2>
-    <p>Upload panel will appear once login works</p>
+    <h2>Upload New Anime DP</h2>
+    <input type="file" id="file">
+    <input type="text" id="name" placeholder="dp50.jpg">
+    <input type="text" id="tags" placeholder="anime,boy,dark">
+    <button id="upload">Upload</button>
+    <p id="status"></p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const ADMIN_PASS = "Akukamithelegend";
+// -------- Supabase Settings --------
+const URL = "https://uekehssbugjcdjopietz.supabase.co";
+const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const db = supabase.createClient(URL, KEY);
+const bucket = "images";
 
-document.getElementById("loginBtn").onclick = ()=>{
-    const p = document.getElementById("pass").value.trim();
+// -------- Password --------
+const PASS = "Akukamithelegend";
 
-    if(p === ADMIN_PASS){
+// -------- LOGIN --------
+document.getElementById("loginBtn").onclick = () => {
+    let val = document.getElementById("pass").value;
+    console.log("Entered:", val); // debug
+
+    if(val === PASS){
+        console.log("Login Successful");
         document.getElementById("loginBox").style.display="none";
         document.getElementById("panel").style.display="block";
     }else{
-        document.getElementById("status").innerHTML="❌ Wrong Password";
+        document.getElementById("logStatus").innerText="❌ Wrong Password";
     }
-}
-</script>
+};
 
+// -------- UPLOAD --------
+document.getElementById("upload").onclick = async () => {
+    let file = document.getElementById("file").files[0];
+    let name = document.getElementById("name").value.trim();
+    let tags = document.getElementById("tags").value.split(",").map(x=>x.trim());
+    let status = document.getElementById("status");
+
+    if(!file || !name){
+        status.innerHTML="⚠ Enter filename + choose image"; return;
+    }
+
+    status.innerHTML="Uploading...⏳";
+
+    let { error } = await db.storage.from(bucket).upload(name, file, { upsert:true });
+    if(error){ status.innerHTML="❌ Upload Failed"; return; }
+
+    await db.from("images").insert({ file:name, tags:tags });
+
+    status.innerHTML="✅ Uploaded Successfully!";
+};
+</script>
 </body>
 </html>
