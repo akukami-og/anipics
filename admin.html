@@ -5,169 +5,96 @@
 <title>Admin Panel | Upload Anime DP</title>
 
 <style>
-    body{
-        background:#0a0a0a;
-        color:#fff;
-        font-family:Arial, sans-serif;
-        margin:0;
-        padding:0;
-        text-align:center;
-    }
-    h2{margin-bottom:10px;}
-
-    /* LOGIN BOX */
-    #loginBox{
-        width:90%;
-        max-width:300px;
-        margin:90px auto;
-        padding:25px;
-        background:#161616;
-        border-radius:8px;
-        animation:fade .3s;
-    }
-
-    /* ADMIN PANEL */
+    body{background:#0d0d0d;color:#fff;font-family:Arial;text-align:center;margin:0;}
+    h2{margin-bottom:15px;}
     #adminPanel{
-        width:90%;
-        max-width:450px;
-        margin:60px auto;
-        background:#181818;
-        padding:25px;
-        border-radius:10px;
-        display:none;
-        animation:fade .4s;
+        width:90%;max-width:450px;margin:60px auto;background:#181818;
+        padding:25px;border-radius:10px;display:none;animation:fade .4s;
     }
-
+    #loginBox{width:90%;max-width:300px;margin:80px auto;}
     input{
-        width:100%;
-        padding:10px;
-        margin:8px 0;
-        border:none;
-        outline:none;
-        border-radius:6px;
-        background:#292929;
-        color:#fff;
+        width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;
+        background:#333;color:#fff;outline:none;
     }
-
     button{
-        width:100%;
-        padding:11px;
-        margin-top:10px;
-        font-weight:bold;
-        border:none;
-        border-radius:6px;
-        background:#ff0055;
-        color:white;
-        cursor:pointer;
-        transition:.2s;
+        width:100%;padding:11px;margin-top:10px;font-weight:bold;border:none;
+        border-radius:6px;background:#ff0055;color:white;cursor:pointer;
     }
     button:hover{opacity:.8;}
-
-    #status{
-        margin-top:10px;
-        font-size:15px;
-        font-weight:bold;
-    }
-
-    @keyframes fade{
-        from{opacity:0; transform:scale(.97);}
-        to{opacity:1; transform:scale(1);}
-    }
+    #status{margin-top:10px;font-size:15px;}
+    @keyframes fade{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:scale(1);}}
 </style>
 </head>
 <body>
-
 
 <!-- 🔐 LOGIN SCREEN -->
 <div id="loginBox">
     <h2>Admin Login</h2>
     <input type="password" id="pass" placeholder="Enter Password">
     <button onclick="login()">Login</button>
-    <p id="logStatus" style="color:#ff6b6b;margin-top:6px;"></p>
+    <p id="logStatus" style="color:#ff6b6b;margin-top:7px;"></p>
 </div>
 
-
-<!-- 🛠 ADMIN UPLOAD PANEL -->
+<!-- 🛠 UPLOAD PANEL -->
 <div id="adminPanel">
-    <h2>🚀 Upload Anime DP</h2>
+    <h2>🚀 Upload New Anime DP</h2>
 
     <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="example.jpg (optional)">
+    <input type="text" id="fileName" placeholder="optional name: dp21.jpg">
     <input type="text" id="tags" placeholder="Tags: anime,boy,dark">
 
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/***************  SUPABASE CONFIG (FIXED) ***************/
+/*************** SUPABASE INIT ***************/
 const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-
-const { createClient } = window.supabase;          // ✅ Correct import
+const { createClient } = window.supabase;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const bucketName="images";
 
-const bucketName = "images";
-
-/***************  PASSWORD LOGIN  ***************/
+/*************** PASSWORD ***************/
 const ADMIN_PASS = "Akukamithelegend";
 
+/*************** LOGIN ***************/
 function login(){
-    let input = document.getElementById("pass").value;
-
-    if(input === ADMIN_PASS){
+    const input=document.getElementById("pass").value;
+    if(input===ADMIN_PASS){
         document.getElementById("loginBox").style.display="none";
         document.getElementById("adminPanel").style.display="block";
-    }else{
-        document.getElementById("logStatus").innerHTML="❌ Wrong Password";
+    } else {
+        document.getElementById("logStatus").innerHTML="❌ Wrong password";
     }
 }
 
-/***************  UPLOAD FUNCTION  ***************/
-document.getElementById("uploadBtn").onclick = async ()=>{
-    
-    const file = document.getElementById("fileInput").files[0];
-    const manualName = document.getElementById("fileName").value.trim();
-    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
-    const status = document.getElementById("status");
+/*************** UPLOAD ***************/
+document.getElementById("uploadBtn").onclick= async()=>{
+    const file=document.getElementById("fileInput").files[0];
+    const customName=document.getElementById("fileName").value.trim();
+    const tags=document.getElementById("tags").value.split(",").map(t=>t.trim());
+    const status=document.getElementById("status");
 
-    if(!file){
-        status.innerHTML="⚠ Select an image";
-        status.style.color="#ff6b6b";
-        return;
-    }
+    if(!file){status.innerHTML="⚠ Choose a file";return;}
 
-    // Auto-generate filename if not given
-    let fileName = manualName !== "" ? manualName : file.name;
-    fileName = fileName.replace(/\s+/g,"_").toLowerCase();
+    let fileName=customName!==""?customName:file.name;
+    fileName=fileName.replace(/\s+/g,"_").toLowerCase();
 
-    status.innerHTML="Uploading... ⏳";
-    status.style.color="#fff";
+    status.innerHTML="Uploading...⏳"; status.style.color="#fff";
 
-    // 1️⃣ Upload Image
-    let { error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(fileName, file, { upsert:true });
+    let {error}=await supabase.storage.from(bucketName).upload(fileName,file,{upsert:true});
+    if(error){status.innerHTML="❌ Upload failed";status.style.color="#f55";return;}
 
-    if(uploadError){
-        status.innerHTML="❌ Upload Failed";
-        status.style.color="#ff6b6b";
-        return;
-    }
-
-    // 2️⃣ Insert DB entry
     await supabase.from("images").insert({file:fileName,tags:tags});
+    status.innerHTML="✅ Uploaded! Refresh main site to view";status.style.color="#00ff99";
 
-    status.innerHTML="✅ Uploaded Successfully!";
-    status.style.color="#00ff99";
-
-    // Reset
     document.getElementById("fileInput").value="";
     document.getElementById("fileName").value="";
     document.getElementById("tags").value="";
 };
-            </script>
-
+</script>
 </body>
 </html>
