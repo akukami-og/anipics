@@ -2,16 +2,17 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Upload Panel</title>
+<title>Admin Upload</title>
 
 <style>
-body{background:#0b0b0b;color:#fff;font-family:Arial;text-align:center;margin:0;}
-#loginBox,#panel{width:90%;max-width:420px;margin:80px auto;padding:25px;}
-input,button{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:15px;}
-input{background:#222;color:#fff;}
-button{background:#ff0055;color:#fff;font-weight:bold;cursor:pointer;} button:hover{opacity:.85;}
-#panel{display:none;background:#161616;border-radius:10px;}
-#status{margin-top:10px;font-size:15px;}
+body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;}
+#login,#panel{width:90%;max-width:420px;margin:80px auto;padding:20px;}
+input,button{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
+input{background:#1f1f1f;color:#fff;}
+button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
+button:hover{opacity:.9;}
+#panel{display:none;background:#151515;border-radius:8px;}
+#log,#status{margin-top:10px;font-size:15px;}
 </style>
 </head>
 
@@ -19,74 +20,82 @@ button{background:#ff0055;color:#fff;font-weight:bold;cursor:pointer;} button:ho
 
 <h2>Admin Login</h2>
 
-<div id="loginBox">
-    <input type="password" id="password" placeholder="Enter Password">
+<div id="login">
+    <input type="password" id="pass" placeholder="Password">
     <button id="loginBtn">Login</button>
-    <p id="loginMsg" style="color:#ff4444;"></p>
+    <p id="log" style="color:#ff5d5d;"></p>
 </div>
 
 <div id="panel">
-    <h2>Upload Anime DP</h2>
+    <h2>Upload Image</h2>
     <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="dp53.jpg">
+    <input type="text" id="fileName" placeholder="dp50.jpg">
     <input type="text" id="tags" placeholder="anime,boy,dark">
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
-<!-- Correct Supabase import -->
+<!-- LOG HERE (Temporary Debug Box) -->
+<p id="debug" style="margin-top:30px;color:#5dff87;font-size:14px;"></p>
+
 <script type="module">
+/* ===== DEBUG PRINT ===== */
+function dbg(msg){
+  document.getElementById("debug").innerHTML += msg+"<br>";
+}
+
+/* ===== Import Supabase ===== */
+dbg("Loading Supabase...");
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
-const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const PASS = "@kumaad";             // <-- Your password
-const BUCKET = "images";            // <-- bucket name
+dbg("Supabase Loaded OK");
 
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+/* ===== Config ===== */
+const URL = "https://uekehssbugjcdjopietz.supabase.co";
+const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const PASS = "@kumaad";
+const BUCKET = "images";
 
-/******** LOGIN ********/
-document.getElementById("loginBtn").onclick = () =>{
-    const val = document.getElementById("password").value;
-    if(val === PASS){
-        document.getElementById("loginBox").style.display="none";
-        document.getElementById("panel").style.display="block";
+const db = createClient(URL, KEY);
+dbg("Client created");
+
+/* ===== LOGIN ===== */
+document.getElementById("loginBtn").onclick = ()=>{
+    let p = document.getElementById("pass").value;
+    dbg("Login clicked: " + p);
+
+    if(p === PASS){
+       dbg("Password correct!");
+       document.getElementById("login").style.display="none";
+       document.getElementById("panel").style.display="block";
     } else {
-        document.getElementById("loginMsg").innerText="❌ Wrong Password";
+       dbg("Password wrong");
+       document.getElementById("log").innerHTML="❌ Wrong Password";
     }
 };
 
-/******** UPLOAD ********/
+/* ===== UPLOAD ===== */
 document.getElementById("uploadBtn").onclick = async ()=>{
-    const file = document.getElementById("fileInput").files[0];
-    const name = document.getElementById("fileName").value.trim();
-    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim());
-    const status = document.getElementById("status");
+   dbg("Upload clicked");
 
-    if(!file || !name){
-        status.innerHTML="⚠ Select file & set filename";
-        status.style.color="#ff6666";
-        return;
-    }
+   let file=document.getElementById("fileInput").files[0];
+   let name=document.getElementById("fileName").value.trim();
+   let tags=document.getElementById("tags").value.split(",").map(t=>t.trim());
+   let status=document.getElementById("status");
 
-    status.innerHTML="Uploading... ⏳";
-    status.style.color="#fff";
+   if(!file || !name){ status.innerHTML="Fill details"; return;}
 
-    //1️⃣ upload to storage bucket
-    const { error:uploadErr } = await db.storage.from(BUCKET).upload(name, file,{ upsert:true });
-    if(uploadErr){ status.innerHTML="❌ Upload Failed"; status.style.color="red"; return; }
+   status.innerHTML="Uploading...";
 
-    //2️⃣ insert into images table
-    const { error:dbErr } = await db.from("images").insert({ file:name, tags:tags });
-    if(dbErr){ status.innerHTML="❌ DB insert failed"; status.style.color="red"; return;}
+   const up = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
+   dbg("Upload result: " + JSON.stringify(up));
 
-    status.innerHTML="✅ Uploaded Successfully!";
-    status.style.color="#4dff7a";
+   const insert = await db.from("images").insert({file:name,tags:tags});
+   dbg("DB insert: " + JSON.stringify(insert));
 
-    document.getElementById("fileInput").value="";
-    document.getElementById("fileName").value="";
-    document.getElementById("tags").value="";
+   status.innerHTML="Upload Done!";
 };
 </script>
+
 </body>
 </html>
