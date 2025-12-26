@@ -8,35 +8,38 @@
 body{background:#000;color:#fff;text-align:center;font-family:Arial;margin:0;}
 #login,#panel{width:90%;max-width:420px;margin:80px auto;padding:20px;}
 input,button{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
-input{background:#1f1f1f;color:#fff;}
-button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
+input{background:#111;color:#fff;}
+button{background:#ff0066;color:#fff;font-weight:bold;}
 button:hover{opacity:.9;}
-#panel{display:none;background:#151515;border-radius:8px;}
-#debug{color:#39ff69;font-size:12px;margin-top:20px;}
+#panel{display:none;background:#181818;border-radius:10px;}
+#debug{margin-top:20px;font-size:12px;color:#8cff9f;}
 </style>
 </head>
 
 <body>
 
 <h2>Admin Login</h2>
+
 <div id="login">
     <input type="password" id="pass" placeholder="Password">
     <button id="loginBtn">Login</button>
-    <p id="log"></p>
+    <p id="log" style="color:#ff4444;"></p>
 </div>
 
 <div id="panel">
     <h2>Upload Image</h2>
-    <input type="file" id="fileInput">
+    <input type="file" id="fileInput" accept="image/*">
     <input type="text" id="fileName" placeholder="dp50.jpg">
     <input type="text" id="tagsInput" placeholder="anime,boy,dark">
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
-<p id="debug"></p>
+<!-- DEBUG output -->
+<pre id="debug"></pre>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="admin.js?v=2"></script> <!-- IMPORTANT -->
+<script src="admin.js"></script>
+
 </body>
 </html>
