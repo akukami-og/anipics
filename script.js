@@ -9,7 +9,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 /***********************
- * ELEMENTS
+ * DOM ELEMENTS
  ***********************/
 const gallery = document.getElementById("gallery");
 const preview = document.getElementById("preview");
@@ -32,41 +32,44 @@ const IMAGES_PER_PAGE = 30;
 
 
 /***********************
- * INIT
+ * START APP
  ***********************/
 init();
 async function init(){
     await loadImages();
     await loadLikes();
+
     buildCategories();
     renderImages();
     enableRealtimeLikes();
+
     hideLoader();
 }
 
 
 /***********************
- * LOAD IMAGES
+ * LOAD IMAGES FROM DB
  ***********************/
 async function loadImages(){
     const { data, error } = await db.from("images").select("*").order("id",{ascending:false});
-    if(error) return console.log("LoadImages Error:", error);
+    if(error) return console.log("Image Load Error:", error);
 
     allImages = data.map(i => ({
         file: i.file,
-        tags: typeof i.tags==="string" ? JSON.parse(i.tags) : i.tags || []
+        tags: Array.isArray(i.tags) ? i.tags :
+              typeof i.tags==="string" ? JSON.parse(i.tags) : []
     }));
 }
 
 
 /***********************
- * LOAD LIKE COUNTS
+ * LOAD LIKES
  ***********************/
 async function loadLikes(){
     const { data } = await db.from("likes").select("*");
     if(!data) return;
 
-    data.forEach(r => likeMap[r.image]=r.count);
+    data.forEach(e => likeMap[e.image]=e.count);
 }
 
 
@@ -74,7 +77,7 @@ async function loadLikes(){
  * REALTIME LIKE UPDATE
  ***********************/
 function enableRealtimeLikes(){
-    db.channel("live-likes")
+    db.channel("like-channel")
       .on("postgres_changes",{event:"UPDATE",table:"likes"},({new:r})=>{
           likeMap[r.image]=r.count;
           const btn=document.querySelector(`button[data-img="${r.image}"]`);
@@ -87,10 +90,10 @@ function enableRealtimeLikes(){
  * CATEGORY BUTTONS
  ***********************/
 function buildCategories(){
-    const tags=new Set();
-    allImages.forEach(img=>img.tags.forEach(t=>tags.add(t)));
+    const tags = new Set();
+    allImages.forEach(img => img.tags.forEach(t=>tags.add(t)));
 
-    categoriesDiv.innerHTML=`<div class="category active" data-tag="all">All</div>`;
+    categoriesDiv.innerHTML = `<div class="category active" data-tag="all">All</div>`;
 
     tags.forEach(tag=>{
         const c=document.createElement("div");
@@ -98,12 +101,13 @@ function buildCategories(){
         c.innerText=tag;
 
         c.onclick=()=>{
-            activeTag = tag;
-            currentPage = 1;
+            activeTag=tag;
+            currentPage=1;
             document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));
             c.classList.add("active");
             renderImages();
         };
+
         categoriesDiv.appendChild(c);
     });
 }
@@ -122,13 +126,13 @@ function renderImages(){
          img.tags.some(t => t.toLowerCase().includes(searchInput.value.toLowerCase())))
     );
 
-    const start = (currentPage-1)*IMAGES_PER_PAGE;
-    const pageImages = filtered.slice(start,start+IMAGES_PER_PAGE);
+    const start=(currentPage-1)*IMAGES_PER_PAGE;
+    const pageImages=filtered.slice(start,start+IMAGES_PER_PAGE);
 
-    // Create cards
+
     pageImages.forEach((img,i)=>{
         const card=document.createElement("div");
-        card.className="card"; card.style.setProperty("--i",i);
+        card.className="card"; card.style.setProperty("--i", i);
 
         const image=document.createElement("img");
         image.src=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
@@ -140,19 +144,25 @@ function renderImages(){
         const likeBtn=document.createElement("button");
         likeBtn.dataset.img=img.file;
         likeBtn.innerHTML = liked?`❤️ Liked (${count})`:`🤍 Like (${count})`;
-
         likeBtn.onclick=async()=>{
             if(liked) return;
-            liked=true; count++;
+            liked=true;count++;
             localStorage.setItem("liked_"+img.file,"true");
             await db.from("likes").upsert({image:img.file,count},{onConflict:"image"});
             likeBtn.innerHTML=`❤️ Liked (${count})`;
         };
 
-        const download=document.createElement("a");
-        download.href=image.src;
-        download.download=img.file;              // ⬇ forces real download
+        // 🔥 REAL one-click download
+        const download=document.createElement("button");
         download.innerText="⬇ Download";
+        download.onclick=()=>{
+            const link=document.createElement("a");
+            link.href=image.src;
+            link.download=img.file;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        };
 
         card.append(image,likeBtn,download);
         gallery.append(card);
@@ -167,7 +177,6 @@ function renderImages(){
  ***********************/
 function buildPagination(total){
     pagination.innerHTML="";
-
     const totalPages = Math.ceil(total/IMAGES_PER_PAGE);
     if(totalPages<=1) return;
 
@@ -175,21 +184,27 @@ function buildPagination(total){
         const btn=document.createElement("button");
         btn.innerText=i;
         btn.className=(i===currentPage)?"activePage":"pageBtn";
-        btn.onclick=()=>{ currentPage=i; renderImages(); };
+        btn.onclick=()=>{currentPage=i;renderImages();};
         pagination.append(btn);
     }
 }
 
 
-/*********************** SEARCH ***********************/
-searchInput.oninput = ()=>{ currentPage=1; renderImages(); };
+/***********************
+ * SEARCH LIVE FILTER
+ ***********************/
+searchInput.oninput = ()=>{currentPage=1;renderImages();};
 
 
-/*********************** PREVIEW ***********************/
+/***********************
+ * PREVIEW CLOSE
+ ***********************/
 closeBtn.onclick=()=>preview.style.display="none";
 preview.onclick=e=>{if(e.target===preview)preview.style.display="none";};
 
 
-/*********************** MISC ***********************/
+/***********************
+ * FOOTER + LOADER
+ ***********************/
 function hideLoader(){ loader.style.display="none"; }
-document.getElementById("year").innerText = new Date().getFullYear();
+document.getElementById("year").innerText=new Date().getFullYear();
