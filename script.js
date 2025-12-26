@@ -8,9 +8,7 @@ const BUCKET = "images";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
-/***********************
- * ELEMENTS
- ***********************/
+/*********************** ELEMENTS ***********************/
 const gallery = document.getElementById("gallery");
 const preview = document.getElementById("preview");
 const previewImg = document.getElementById("previewImg");
@@ -24,9 +22,7 @@ let likeMap = {};
 let activeTag = "all";
 
 
-/***********************
- * INIT
- ***********************/
+/*********************** INIT ***********************/
 init();
 async function init(){
     await loadImages();
@@ -39,7 +35,7 @@ async function init(){
 
 
 /***********************
- * LOAD IMAGES (with Fix)
+ * LOAD IMAGES (supports both text[] and string JSON)
  ***********************/
 async function loadImages(){
     const { data, error } = await supabaseClient
@@ -51,41 +47,39 @@ async function loadImages(){
 
     allImages = data.map(i => ({
         file: i.file,
-        tags: typeof i.tags === "string" ? JSON.parse(i.tags) : (i.tags || [])
+        tags: Array.isArray(i.tags)
+              ? i.tags
+              : typeof i.tags === "string"
+                ? JSON.parse(i.tags)
+                : []
     }));
 }
 
 
-/***********************
- * LOAD LIKE COUNTS
- ***********************/
+/*********************** LOAD LIKES ***********************/
 async function loadLikes(){
     const { data,error } = await supabaseClient.from("likes").select("*");
-    if(error) return;
+    if(error) return console.log(error);
 
     data.forEach(r => likeMap[r.image] = r.count);
 }
 
 
-/***********************
- * LIVE UPDATE
- ***********************/
+/*********************** REALTIME LIKE UPDATE ***********************/
 function enableRealtimeLikes(){
     supabaseClient.channel("live-likes")
     .on("postgres_changes",
        {event:"UPDATE",schema:"public",table:"likes"},
-       ({new: row})=>{
-          likeMap[row.image] = row.count;
-          const btn=document.querySelector(`button[data-img="${row.image}"]`);
-          if(btn) btn.innerHTML=`❤️ Liked (${row.count})`;
+       payload=>{
+          likeMap[payload.new.image] = payload.new.count;
+          const btn=document.querySelector(`button[data-img="${payload.new.image}"]`);
+          if(btn) btn.innerHTML=`❤️ Liked (${payload.new.count})`;
        }
     ).subscribe();
 }
 
 
-/***********************
- * BUILD TAG BUTTONS
- ***********************/
+/*********************** BUILD CATEGORY BUTTONS ***********************/
 function buildCategories(){
     const tags=new Set();
     allImages.forEach(img=>img.tags.forEach(t=>tags.add(t)));
@@ -109,9 +103,7 @@ function buildCategories(){
 }
 
 
-/***********************
- * RENDER IMAGES
- ***********************/
+/*********************** RENDER IMAGES TO UI ***********************/
 function renderImages(list){
     gallery.innerHTML="";
 
@@ -154,21 +146,19 @@ function renderImages(list){
 }
 
 
-/***********************
- * FILTER & SEARCH
- ***********************/
+/*********************** SEARCH & FILTER ***********************/
 function filterImages(){
     const q=searchInput.value.toLowerCase();
 
     renderImages(allImages.filter(img =>
         (activeTag==="all" || img.tags.includes(activeTag)) &&
-        (img.file.toLowerCase().includes(q) || img.tags.some(t=>t.includes(q)))
+        (img.file.toLowerCase().includes(q) || img.tags.some(t=>t.toLowerCase().includes(q)))
     ));
 }
 searchInput.oninput=filterImages;
 
 
-/***********************/
+/*********************** MISC ***********************/
 closeBtn.onclick=()=>preview.style.display="none";
 preview.onclick=e=>{if(e.target===preview)preview.style.display="none";}
 function hideLoader(){loader.style.display="none";}
