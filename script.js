@@ -4,7 +4,6 @@
 const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const BUCKET = "images";
-
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
@@ -34,9 +33,7 @@ async function init(){
 }
 
 
-/***********************
- * LOAD IMAGES (supports both text[] and string JSON)
- ***********************/
+/*********************** LOAD IMAGES ***********************/
 async function loadImages(){
     const { data, error } = await supabaseClient
         .from("images")
@@ -56,7 +53,7 @@ async function loadImages(){
 }
 
 
-/*********************** LOAD LIKES ***********************/
+/*********************** LIKE DATA ***********************/
 async function loadLikes(){
     const { data,error } = await supabaseClient.from("likes").select("*");
     if(error) return console.log(error);
@@ -70,16 +67,16 @@ function enableRealtimeLikes(){
     supabaseClient.channel("live-likes")
     .on("postgres_changes",
        {event:"UPDATE",schema:"public",table:"likes"},
-       payload=>{
-          likeMap[payload.new.image] = payload.new.count;
-          const btn=document.querySelector(`button[data-img="${payload.new.image}"]`);
-          if(btn) btn.innerHTML=`❤️ Liked (${payload.new.count})`;
+       ({new: row})=>{
+          likeMap[row.image] = row.count;
+          const btn=document.querySelector(`button[data-img="${row.image}"]`);
+          if(btn) btn.innerHTML=`❤️ Liked (${row.count})`;
        }
     ).subscribe();
 }
 
 
-/*********************** BUILD CATEGORY BUTTONS ***********************/
+/*********************** BUILD CATEGORY ***********************/
 function buildCategories(){
     const tags=new Set();
     allImages.forEach(img=>img.tags.forEach(t=>tags.add(t)));
@@ -103,7 +100,7 @@ function buildCategories(){
 }
 
 
-/*********************** RENDER IMAGES TO UI ***********************/
+/*********************** RENDER IMAGES ***********************/
 function renderImages(list){
     gallery.innerHTML="";
 
@@ -125,7 +122,9 @@ function renderImages(list){
         likeBtn.onclick=async()=>{
             if(liked) return;
             liked=true;count++;
+
             localStorage.setItem("liked_"+img.file,"true");
+            likeMap[img.file]=count;
 
             await supabaseClient.from("likes").upsert(
                 {image:img.file,count},
@@ -135,10 +134,27 @@ function renderImages(list){
             likeBtn.innerHTML=`❤️ Liked (${count})`;
         }
 
-        const download=document.createElement("a");
-        download.href=image.src;
-        download.download="";
+
+        /* ------ FIXED DOWNLOAD (FORCE DOWNLOAD) ------ */
+        const download=document.createElement("button");
         download.innerText="⬇ Download";
+
+        download.onclick = async ()=>{
+            const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+            try{
+                const res = await fetch(url);
+                const blob = await res.blob();
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = img.file;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }catch(e){
+                alert("Download failed ❌");
+                console.log(e);
+            }
+        };
 
         card.append(image,likeBtn,download);
         gallery.append(card);
@@ -146,10 +162,9 @@ function renderImages(list){
 }
 
 
-/*********************** SEARCH & FILTER ***********************/
+/*********************** FILTER SEARCH ***********************/
 function filterImages(){
     const q=searchInput.value.toLowerCase();
-
     renderImages(allImages.filter(img =>
         (activeTag==="all" || img.tags.includes(activeTag)) &&
         (img.file.toLowerCase().includes(q) || img.tags.some(t=>t.toLowerCase().includes(q)))
@@ -158,7 +173,7 @@ function filterImages(){
 searchInput.oninput=filterImages;
 
 
-/*********************** MISC ***********************/
+/*********************** PREVIEW ***********************/
 closeBtn.onclick=()=>preview.style.display="none";
 preview.onclick=e=>{if(e.target===preview)preview.style.display="none";}
 function hideLoader(){loader.style.display="none";}
