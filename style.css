@@ -1,160 +1,188 @@
-/* ================= NEON RED THEME ================= */
+/* =========================
+   🔥 NEON RED THEME
+========================= */
 :root{
   --red:#ff1a1a;
-  --red-glow:rgba(255,0,0,0.85);
+  --red-soft:#d31212;
+  --red-glow:rgba(255,0,0,.85);
+  --dark:#0a0a0a;
+  --card-bg:#0d0d0d;
+  --border:#ff1a1a99;
 }
 
-/* ================= BACKGROUND ================= */
+/* =========================
+   BACKGROUND
+========================= */
 .neon-bg{
   position:fixed;inset:0;z-index:-1;
   background:black;
   background-image:
-    radial-gradient(circle at 20% 30%,rgba(255,0,0,0.18),transparent 50%),
-    radial-gradient(circle at 70% 80%,rgba(255,0,0,0.14),transparent 60%),
-    radial-gradient(circle at 50% 50%,rgba(255,0,0,0.12),transparent 55%);
-  animation:bgAnim 12s infinite alternate ease-in-out;
+    radial-gradient(circle at 20% 30%,rgba(255,0,0,0.22),transparent 55%),
+    radial-gradient(circle at 80% 70%,rgba(255,0,0,0.18),transparent 60%),
+    radial-gradient(circle at 50% 50%,rgba(255,0,0,0.13),transparent 60%);
+  animation:bgPulse 10s ease-in-out infinite alternate;
 }
-@keyframes bgAnim{
+@keyframes bgPulse{
   from{transform:scale(1);}
-  to{transform:scale(1.05);}
+  to{transform:scale(1.07);}
 }
 
-/* ================= GLOBAL ================= */
+/* =========================
+   BASE
+========================= */
 body{
   margin:0;
   background:#000;
   color:#fff;
   text-align:center;
-  font-family:Poppins,Arial;
+  font-family:'Poppins',Arial,sans-serif;
   scroll-behavior:smooth;
 }
 
-/* ================= TITLE ================= */
 h1{
+  margin:25px 0 15px;
   font-size:34px;
-  margin:25px 0;
   font-weight:800;
+  letter-spacing:.5px;
   color:var(--red);
-  text-shadow:0 0 18px var(--red-glow),0 0 32px var(--red);
+  text-shadow:0 0 20px var(--red-glow),0 0 40px var(--red);
 }
 
-/* ================= SEARCH ================= */
+/* =========================
+   SEARCH BOX
+========================= */
 #search{
-  width:90%;max-width:350px;
+  width:90%;max-width:360px;
   padding:12px 18px;
+  border-radius:30px;
   background:#050505;
-  color:white;
   border:2px solid var(--red);
-  border-radius:28px;
+  color:white;
+  font-size:15px;
+  margin-bottom:22px;
   box-shadow:0 0 18px var(--red-glow);
-  margin-bottom:20px;
-  transition:.25s;
+  transition:.3s;
 }
 #search:focus{
-  box-shadow:0 0 32px var(--red);
   outline:none;
+  box-shadow:0 0 30px var(--red),0 0 60px var(--red-glow);
 }
 
-/* ================= CATEGORIES ================= */
+/* =========================
+   CATEGORY FILTERS
+========================= */
 #categories{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
   gap:10px;
-  margin-bottom:22px;
+  margin-bottom:25px;
 }
 .category{
-  padding:6px 14px;
+  padding:7px 15px;
   font-size:12px;
   border-radius:16px;
-  border:1px solid var(--red);
+  border:1px solid var(--border);
   cursor:pointer;
   background:#000;
   color:white;
-  box-shadow:0 0 14px var(--red-glow);
-  text-shadow:0 0 8px var(--red);
-  transition:.25s;
+  box-shadow:0 0 12px var(--red-glow);
+  transition:.3s;
 }
-.category:hover{transform:scale(1.08);}
+.category:hover{
+  transform:scale(1.1);
+  background:var(--red-soft);
+}
 .category.active{
   background:var(--red);
-  box-shadow:0 0 26px var(--red-glow);
+  color:#fff;
+  transform:scale(1.08);
+  box-shadow:0 0 26px var(--red-glow),0 0 55px var(--red);
 }
 
-/* ================= GALLERY GRID ================= */
+/* =========================
+   GALLERY GRID
+========================= */
 .gallery{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:20px;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:22px;
   max-width:1000px;
   padding:20px;
   margin:auto;
 }
 
-/* ================= CARD ================= */
+/* =========================
+   CARD UI
+========================= */
 .card{
-  background:#0a0a0a;
-  padding:14px;
+  background:var(--card-bg);
+  padding:15px;
   border-radius:18px;
   box-shadow:0 0 18px var(--red-glow);
   opacity:0;
-  transform:translateY(18px) scale(.96);
-  animation:show .45s ease forwards;
-  transition:.35s;
+  transform:translateY(20px) scale(.95);
+  animation:fadeUp .45s forwards ease-out;
+  transition:.3s;
 }
-@keyframes show{
+@keyframes fadeUp{
   to{opacity:1;transform:translateY(0) scale(1);}
 }
 
-/* ================= IMAGE ================= */
+/* =========================
+   IMAGE DISPLAY
+========================= */
 .card img{
   width:100%;
   aspect-ratio:1/1;
-  object-fit:cover;
   border-radius:50%;
   border:3px solid var(--red);
-  box-shadow:0 0 22px var(--red-glow);
+  object-fit:cover;
+  box-shadow:0 0 25px var(--red-glow);
   transition:.35s;
 }
 .card img:hover{
-  transform:scale(1.10);
-  box-shadow:0 0 30px var(--red-glow);
+  transform:scale(1.12);
+  box-shadow:0 0 35px var(--red-glow),0 0 65px var(--red);
 }
 
-/* ================= BUTTONS ================= */
+/* =========================
+   BUTTONS (LIKE + DOWNLOAD)
+========================= */
 button,a{
   width:90%;
-  display:block;
   margin:10px auto;
-  padding:8px 15px;
+  padding:9px 15px;
+  background:#000;
+  color:#fff;
   border:2px solid var(--red);
   border-radius:22px;
-  font-size:14px;
-  background:#000;
-  color:white;
   cursor:pointer;
-  text-decoration:none;
+  font-size:14px;
   box-shadow:0 0 16px var(--red-glow);
   transition:.3s;
 }
 button:hover,a:hover{
   background:var(--red);
-  box-shadow:0 0 30px var(--red-glow);
+  box-shadow:0 0 35px var(--red-glow),0 0 60px var(--red);
 }
 button:active,a:active{transform:scale(.92);}
 
-/* ================= PAGINATION ================= */
+/* =========================
+   PAGINATION
+========================= */
 #pagination{
   display:flex;
-  gap:6px;
   justify-content:center;
-  margin:30px 0 10px;
   flex-wrap:wrap;
+  gap:8px;
+  margin:30px 0 20px;
 }
 #pagination button{
-  padding:8px 13px;
-  min-width:45px;
+  min-width:42px;
+  padding:7px 12px;
   font-weight:600;
+  border-radius:8px;
 }
 .pageBtn{
   background:#111;
@@ -162,23 +190,24 @@ button:active,a:active{transform:scale(.92);}
 }
 .activePage{
   background:var(--red);
-  color:#fff;
-  box-shadow:0 0 25px var(--red-glow);
+  color:white;
+  box-shadow:0 0 25px var(--red-glow),0 0 55px var(--red);
 }
 
-/* ================= PREVIEW ================= */
+/* =========================
+   FULLSCREEN PREVIEW
+========================= */
 #preview{
   position:fixed;inset:0;
-  background:rgba(0,0,0,.92);
+  background:rgba(0,0,0,.93);
   display:none;
-  align-items:center;
   justify-content:center;
-  z-index:999;
+  align-items:center;
 }
 #preview img{
   max-width:92%;max-height:92%;
-  border-radius:20px;
-  box-shadow:0 0 40px var(--red-glow);
+  border-radius:18px;
+  box-shadow:0 0 40px var(--red-glow),0 0 90px var(--red);
   animation:zoom .35s ease;
 }
 @keyframes zoom{
@@ -187,21 +216,21 @@ button:active,a:active{transform:scale(.92);}
 }
 #close{
   position:absolute;
-  top:18px;right:22px;
-  font-size:32px;
+  top:22px;right:28px;
+  font-size:34px;
   cursor:pointer;
   color:var(--red);
-  text-shadow:0 0 18px var(--red-glow);
+  text-shadow:0 0 22px var(--red-glow);
 }
 
-/* ================= LOADER ================= */
+/* =========================
+   LOADER
+========================= */
 #loader{
   position:fixed;inset:0;
-  background:black;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
+  background:#000;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
   z-index:1000;
 }
 .neon-ring{
@@ -210,27 +239,29 @@ button:active,a:active{transform:scale(.92);}
   border:5px solid transparent;
   border-top-color:var(--red);
   animation:spin 1s infinite linear;
-  box-shadow:0 0 26px var(--red-glow);
+  box-shadow:0 0 26px var(--red-glow),0 0 55px var(--red);
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 #loader p{
   margin-top:14px;
-  font-weight:600;
   color:var(--red);
+  font-weight:600;
   text-shadow:0 0 12px var(--red-glow);
 }
 
-/* ================= FOOTER ================= */
+/* =========================
+   FOOTER
+========================= */
 .site-footer{
-  margin-top:35px;
+  margin-top:30px;
   padding:15px 0;
+  color:#aaa;
   background:#000;
   border-top:1px solid #222;
-  color:#999;
 }
 .credit{
   margin-top:6px;
   font-weight:bold;
   color:var(--red);
-  text-shadow:0 0 14px var(--red-glow);
+  text-shadow:0 0 16px var(--red-glow);
 }
