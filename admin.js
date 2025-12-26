@@ -1,5 +1,3 @@
-// ADMIN.JS
-
 const URL = "https://uekehssbugjcdjopietz.supabase.co";
 const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const PASS = "@kumaad";
@@ -7,77 +5,63 @@ const BUCKET = "images";
 
 const db = supabase.createClient(URL, KEY);
 
-function log(text) {
-  const d = document.getElementById("debug");
-  if (d) d.innerText += text + "\n";
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  log("DOM Loaded");
 
-  const loginBtn = document.getElementById("loginBtn");
-  const uploadBtn = document.getElementById("uploadBtn");
+    const log = (t)=> document.getElementById("debug").innerHTML += t+"<br>";
 
-  if (!loginBtn || !uploadBtn) {
-    log("Buttons not found!");
-    return;
-  }
+    log("JS Loaded OK");
 
-  loginBtn.onclick = () => {
-    log("Login pressed");
-    const pass = document.getElementById("pass").value;
-    if (pass === PASS) {
-      document.getElementById("login").style.display = "none";
-      document.getElementById("panel").style.display = "block";
-      log("Login success");
-    } else {
-      document.getElementById("log").innerText = "❌ Wrong Password";
-      log("Wrong password");
-    }
-  };
+    // LOGIN
+    document.getElementById("loginBtn").onclick = ()=>{
+        let p = document.getElementById("pass").value;
+        log("Login Clicked");
 
-  uploadBtn.onclick = async () => {
-    log("Upload pressed");
+        if(p===PASS){
+            log("Password correct");
+            document.getElementById("login").style.display = "none";
+            document.getElementById("panel").style.display = "block";
+        } else {
+            document.getElementById("log").innerText="❌ Wrong Password";
+            log("Wrong password");
+        }
+    };
 
-    const file = document.getElementById("fileInput").files[0];
-    const name = document.getElementById("fileName").value.trim();
-    const tags = document
-      .getElementById("tagsInput")
-      .value.split(",")
-      .map((x) => x.trim())
-      .filter((v) => v);
+    // UPLOAD
+    document.getElementById("uploadBtn").onclick = async ()=>{
+        log("Upload Clicked");
 
-    const status = document.getElementById("status");
+        const file = document.getElementById("fileInput").files[0];
+        const name = document.getElementById("fileName").value.trim();
+        const tags = document.getElementById("tagsInput").value.split(",").map(t=>t.trim());
 
-    if (!file || !name) {
-      status.innerText = "⚠ Enter filename & choose image";
-      return;
-    }
+        const status = document.getElementById("status");
 
-    status.innerText = "Uploading...";
-    log("Uploading to Supabase Storage");
+        if(!file || !name){
+            status.innerText="⚠ Enter name & choose file";
+            return;
+        }
 
-    const up = await db.storage.from(BUCKET).upload(name, file, {
-      upsert: true,
-    });
+        status.innerText="Uploading...";
+        log("Uploading to bucket...");
 
-    if (up.error) {
-      status.innerText = "❌ Upload failed";
-      log("Upload Error: " + up.error.message);
-      return;
-    }
+        let up = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
+        if(up.error){
+            status.innerText="❌ Upload Failed";
+            log(up.error.message);
+            return;
+        }
 
-    status.innerText = "Saving to DB...";
-    log("Uploading to DB");
+        log("Saving DB...");
+        let row = await db.from("images").insert([{file:name,tags}]);
 
-    const insert = await db.from("images").insert([{ file: name, tags }]);
-    if (insert.error) {
-      status.innerText = "❌ DB insert failed";
-      log("DB Error: " + insert.error.message);
-      return;
-    }
+        if(row.error){
+            status.innerText="❌ DB Insert Failed";
+            log(row.error.message);
+            return;
+        }
 
-    status.innerText = "✅ Upload complete!";
-    log("Upload complete!");
-  };
+        status.innerText="✅ Upload Success!";
+        log("Done!");
+    };
+
 });
