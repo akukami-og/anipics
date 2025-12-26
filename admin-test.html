@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login Test</title>
+<style>
+body{background:#000;color:#fff;text-align:center;font-family:Arial;margin-top:100px;}
+input,button{padding:12px;font-size:18px;width:250px;margin:5px;}
+button{background:#ff0058;color:#fff;border:none;border-radius:8px;}
+</style>
+</head>
+<body>
+
+<h2>LOGIN TEST</h2>
+<input type="password" id="pass" placeholder="Enter Password"><br>
+<button id="loginBtn">Login</button>
+
+<p id="result"></p>
+
+<script>
+const PASS = "@kumaad";
+
+document.getElementById("loginBtn").onclick = () =>{
+    const val = document.getElementById("pass").value;
+    if(val === PASS){
+        document.getElementById("result").innerHTML="✔ Login Successful";
+    }else{
+        document.getElementById("result").innerHTML="❌ Wrong Password";
+    }
+};
+</script>
+
+</body>
+</html>
