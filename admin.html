@@ -74,26 +74,33 @@ document.getElementById("loginBtn").onclick = ()=>{
     }
 };
 
-/* ===== UPLOAD ===== */
-document.getElementById("uploadBtn").onclick = async ()=>{
-   dbg("Upload clicked");
+// -------- UPLOAD FIXED --------
+document.getElementById("upload").onclick = async () => {
+    let file = document.getElementById("file").files[0];
+    let name = document.getElementById("name").value.trim();
+    let tags = document.getElementById("tags").value
+                   .split(",")
+                   .map(t=>t.trim())
+                   .filter(t=>t.length>0);
 
-   let file=document.getElementById("fileInput").files[0];
-   let name=document.getElementById("fileName").value.trim();
-   let tags=document.getElementById("tags").value.split(",").map(t=>t.trim());
-   let status=document.getElementById("status");
+    let status = document.getElementById("status");
 
-   if(!file || !name){ status.innerHTML="Fill details"; return;}
+    if(!file || !name){ status.innerHTML="⚠ filename + image required"; return; }
 
-   status.innerHTML="Uploading...";
+    status.innerHTML="Uploading... ⏳";
 
-   const up = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-   dbg("Upload result: " + JSON.stringify(up));
+    // upload to storage
+    const { error: uploadErr } = await db.storage.from(bucket)
+        .upload(name, file, { upsert:true });
+    if(uploadErr){ status.innerHTML="❌ Upload Failed"; return; }
 
-   const insert = await db.from("images").insert({file:name,tags:tags});
-   dbg("DB insert: " + JSON.stringify(insert));
+    // INSERT WITH JSON FORMAT
+    const { error: dbErr } = await db.from("images")
+        .insert([{ file:name, tags: JSON.stringify(tags) }]);  //<--- FIX
 
-   status.innerHTML="Upload Done!";
+    if(dbErr){ status.innerHTML="❌ DB Insert Failed"; console.log(dbErr); return; }
+
+    status.innerHTML="✅ Successfully Uploaded & Saved!";
 };
 </script>
 
