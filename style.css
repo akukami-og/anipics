@@ -1,93 +1,97 @@
-/* =========================
-   🔥 NEON RED THEME
-========================= */
+/* ============================================================
+   🔥  NEON RED BLACK THEME — POLISHED VERSION
+   Smooth Glow • Better Depth • Responsive Grid
+============================================================ */
+
 :root{
   --red:#ff1a1a;
-  --red-soft:#d31212;
-  --red-glow:rgba(255,0,0,.85);
-  --dark:#0a0a0a;
-  --card-bg:#0d0d0d;
-  --border:#ff1a1a99;
+  --red-soft:#e01414;
+  --glow:rgba(255,0,0,.85);
+  --bg:#000;
+  --card:#0c0c0c;
+  --border:#ff1a1a93;
 }
 
-/* =========================
-   BACKGROUND
-========================= */
+/* ============================================================
+   BACKGROUND AMBIENT GLOW
+============================================================ */
 .neon-bg{
   position:fixed;inset:0;z-index:-1;
-  background:black;
+  background:var(--bg);
   background-image:
-    radial-gradient(circle at 20% 30%,rgba(255,0,0,0.22),transparent 55%),
-    radial-gradient(circle at 80% 70%,rgba(255,0,0,0.18),transparent 60%),
-    radial-gradient(circle at 50% 50%,rgba(255,0,0,0.13),transparent 60%);
-  animation:bgPulse 10s ease-in-out infinite alternate;
+    radial-gradient(circle at 25% 25%,rgba(255,0,0,.24),transparent 55%),
+    radial-gradient(circle at 75% 75%,rgba(255,0,0,.18),transparent 60%),
+    radial-gradient(circle at 50% 50%,rgba(255,0,0,.14),transparent 60%);
+  animation:bgPulse 12s infinite alternate ease-in-out;
 }
 @keyframes bgPulse{
   from{transform:scale(1);}
   to{transform:scale(1.07);}
 }
 
-/* =========================
-   BASE
-========================= */
+/* ============================================================
+   GLOBAL UI
+============================================================ */
 body{
   margin:0;
-  background:#000;
-  color:#fff;
-  text-align:center;
+  background:var(--bg);
+  color:white;
   font-family:'Poppins',Arial,sans-serif;
+  text-align:center;
   scroll-behavior:smooth;
 }
 
+/* ============================================================
+   TITLE
+============================================================ */
 h1{
-  margin:25px 0 15px;
   font-size:34px;
   font-weight:800;
-  letter-spacing:.5px;
+  margin:26px 0 18px;
   color:var(--red);
-  text-shadow:0 0 20px var(--red-glow),0 0 40px var(--red);
+  text-shadow:0 0 22px var(--glow),0 0 45px var(--red);
 }
 
-/* =========================
+/* ============================================================
    SEARCH BOX
-========================= */
+============================================================ */
 #search{
   width:90%;max-width:360px;
   padding:12px 18px;
-  border-radius:30px;
-  background:#050505;
+  border-radius:28px;
   border:2px solid var(--red);
+  background:#060606;
   color:white;
   font-size:15px;
   margin-bottom:22px;
-  box-shadow:0 0 18px var(--red-glow);
+  box-shadow:0 0 20px var(--glow);
   transition:.3s;
 }
 #search:focus{
   outline:none;
-  box-shadow:0 0 30px var(--red),0 0 60px var(--red-glow);
+  box-shadow:0 0 35px var(--red),0 0 70px var(--glow);
 }
 
-/* =========================
-   CATEGORY FILTERS
-========================= */
+/* ============================================================
+   CATEGORY BUTTONS
+============================================================ */
 #categories{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
   gap:10px;
-  margin-bottom:25px;
+  margin-bottom:26px;
 }
 .category{
   padding:7px 15px;
   font-size:12px;
-  border-radius:16px;
-  border:1px solid var(--border);
-  cursor:pointer;
+  border-radius:18px;
   background:#000;
   color:white;
-  box-shadow:0 0 12px var(--red-glow);
-  transition:.3s;
+  border:1px solid var(--border);
+  box-shadow:0 0 15px var(--glow);
+  cursor:pointer;
+  transition:.25s;
 }
 .category:hover{
   transform:scale(1.1);
@@ -95,91 +99,98 @@ h1{
 }
 .category.active{
   background:var(--red);
-  color:#fff;
-  transform:scale(1.08);
-  box-shadow:0 0 26px var(--red-glow),0 0 55px var(--red);
+  color:white;
+  transform:scale(1.09);
+  box-shadow:0 0 30px var(--glow),0 0 70px var(--red);
 }
 
-/* =========================
-   GALLERY GRID
-========================= */
+/* ============================================================
+   GALLERY GRID — Responsive
+============================================================ */
 .gallery{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  /* 🔥 2 images per row (mobile) */
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
   gap:22px;
-  max-width:1000px;
   padding:20px;
+  max-width:900px;
   margin:auto;
 }
 
-/* =========================
-   CARD UI
-========================= */
-.card{
-  background:var(--card-bg);
-  padding:15px;
-  border-radius:18px;
-  box-shadow:0 0 18px var(--red-glow);
-  opacity:0;
-  transform:translateY(20px) scale(.95);
-  animation:fadeUp .45s forwards ease-out;
-  transition:.3s;
+/* pc/tablet auto 3 or 4 based on width */
+@media(min-width:900px){
+  .gallery{grid-template-columns:repeat(3,1fr);}
 }
-@keyframes fadeUp{
-  to{opacity:1;transform:translateY(0) scale(1);}
+@media(min-width:1100px){
+  .gallery{grid-template-columns:repeat(4,1fr);}
 }
 
-/* =========================
-   IMAGE DISPLAY
-========================= */
+/* ============================================================
+   IMAGE CARD
+============================================================ */
+.card{
+  background:var(--card);
+  padding:16px;
+  border-radius:18px;
+  box-shadow:0 0 20px var(--glow);
+  animation:fadeUp .45s ease forwards;
+  opacity:0;
+  transform:translateY(22px) scale(.95);
+  transition:.3s;
+}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0) scale(1);}}
+
+/* ============================================================
+   IMAGE STYLE
+============================================================ */
 .card img{
   width:100%;
   aspect-ratio:1/1;
+  object-fit:cover;
   border-radius:50%;
   border:3px solid var(--red);
-  object-fit:cover;
-  box-shadow:0 0 25px var(--red-glow);
+  box-shadow:0 0 28px var(--glow);
   transition:.35s;
 }
 .card img:hover{
   transform:scale(1.12);
-  box-shadow:0 0 35px var(--red-glow),0 0 65px var(--red);
+  box-shadow:0 0 38px var(--glow),0 0 80px var(--red);
 }
 
-/* =========================
+/* ============================================================
    BUTTONS (LIKE + DOWNLOAD)
-========================= */
+============================================================ */
 button,a{
   width:90%;
   margin:10px auto;
   padding:9px 15px;
-  background:#000;
-  color:#fff;
-  border:2px solid var(--red);
   border-radius:22px;
-  cursor:pointer;
+  background:#000;
+  border:2px solid var(--red);
+  color:white;
   font-size:14px;
-  box-shadow:0 0 16px var(--red-glow);
+  cursor:pointer;
+  box-shadow:0 0 18px var(--glow);
   transition:.3s;
 }
 button:hover,a:hover{
   background:var(--red);
-  box-shadow:0 0 35px var(--red-glow),0 0 60px var(--red);
+  box-shadow:0 0 36px var(--glow),0 0 70px var(--red);
 }
 button:active,a:active{transform:scale(.92);}
 
-/* =========================
+/* ============================================================
    PAGINATION
-========================= */
+============================================================ */
 #pagination{
   display:flex;
-  justify-content:center;
   flex-wrap:wrap;
   gap:8px;
-  margin:30px 0 20px;
+  justify-content:center;
+  margin:32px 0 22px;
 }
 #pagination button{
-  min-width:42px;
+  min-width:44px;
   padding:7px 12px;
   font-weight:600;
   border-radius:8px;
@@ -191,70 +202,73 @@ button:active,a:active{transform:scale(.92);}
 .activePage{
   background:var(--red);
   color:white;
-  box-shadow:0 0 25px var(--red-glow),0 0 55px var(--red);
+  box-shadow:0 0 25px var(--glow),0 0 60px var(--red);
 }
 
-/* =========================
+/* ============================================================
    FULLSCREEN PREVIEW
-========================= */
+============================================================ */
 #preview{
   position:fixed;inset:0;
-  background:rgba(0,0,0,.93);
+  background:rgba(0,0,0,.92);
   display:none;
   justify-content:center;
   align-items:center;
+  z-index:999;
 }
 #preview img{
-  max-width:92%;max-height:92%;
-  border-radius:18px;
-  box-shadow:0 0 40px var(--red-glow),0 0 90px var(--red);
+  max-width:90%;
+  max-height:92%;
+  border-radius:20px;
+  box-shadow:0 0 38px var(--glow),0 0 100px var(--red);
   animation:zoom .35s ease;
 }
-@keyframes zoom{
-  from{opacity:0;transform:scale(.85);}
-  to{opacity:1;transform:scale(1);}
-}
+@keyframes zoom{from{opacity:0;transform:scale(.83);}to{opacity:1;transform:scale(1);}}
+
+/* close button */
 #close{
   position:absolute;
-  top:22px;right:28px;
-  font-size:34px;
+  top:22px;right:26px;
+  font-size:35px;
   cursor:pointer;
   color:var(--red);
-  text-shadow:0 0 22px var(--red-glow);
+  text-shadow:0 0 26px var(--glow);
 }
 
-/* =========================
+/* ============================================================
    LOADER
-========================= */
+============================================================ */
 #loader{
   position:fixed;inset:0;
-  background:#000;
-  display:flex;flex-direction:column;
-  justify-content:center;align-items:center;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  background:black;
   z-index:1000;
 }
 .neon-ring{
-  width:70px;height:70px;
+  width:75px;height:75px;
   border-radius:50%;
   border:5px solid transparent;
   border-top-color:var(--red);
-  animation:spin 1s infinite linear;
-  box-shadow:0 0 26px var(--red-glow),0 0 55px var(--red);
+  animation:spin 1s linear infinite;
+  box-shadow:0 0 30px var(--glow),0 0 70px var(--red);
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 #loader p{
   margin-top:14px;
-  color:var(--red);
   font-weight:600;
-  text-shadow:0 0 12px var(--red-glow);
+  color:var(--red);
+  text-shadow:0 0 16px var(--glow);
 }
 
-/* =========================
+/* ============================================================
    FOOTER
-========================= */
+============================================================ */
 .site-footer{
-  margin-top:30px;
-  padding:15px 0;
+  margin-top:35px;
+  padding:16px 0;
   color:#aaa;
   background:#000;
   border-top:1px solid #222;
@@ -263,5 +277,5 @@ button:active,a:active{transform:scale(.92);}
   margin-top:6px;
   font-weight:bold;
   color:var(--red);
-  text-shadow:0 0 16px var(--red-glow);
+  text-shadow:0 0 18px var(--glow);
 }
