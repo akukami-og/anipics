@@ -3,29 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Panel</title>
-
 <style>
-body{
-    background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;
-}
-#login,#panel{
-    width:90%;max-width:420px;margin:60px auto;padding:20px;
-}
-input,button{
-    width:100%;padding:10px;margin:6px 0;border:none;border-radius:6px;font-size:16px;
-}
-input{background:#1f1f1f;color:#fff;}
-button{
-    background:#ff0066;color:#fff;font-weight:bold;cursor:pointer;transition:.2s;
-}
+body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;}
+#login,#panel{width:90%;max-width:420px;margin:70px auto;padding:20px;}
+input,button{width:100%;padding:10px;margin:6px 0;border:none;border-radius:6px;font-size:16px;}
+input{background:#1d1d1d;color:#fff;}
+button{background:#ff0066;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.85;}
-#panel{
-    display:none;background:#151515;border-radius:8px;
-}
+#panel{display:none;background:#161616;border-radius:8px;}
 #status{margin-top:10px;font-size:15px;color:#00ff8c;}
-#debug{
-    color:#00e5ff;margin-top:30px;font-size:13px;white-space:pre-line;
-}
 </style>
 </head>
 
@@ -33,7 +19,7 @@ button:hover{opacity:.85;}
 
 <h2>Admin Login</h2>
 
-<!-- LOGIN BOX -->
+<!-- LOGIN -->
 <div id="login">
     <input type="password" id="pass" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
@@ -43,92 +29,67 @@ button:hover{opacity:.85;}
 <!-- UPLOAD PANEL -->
 <div id="panel">
     <h2>Upload Image</h2>
-    <input type="file" id="file" accept="image/*">
-    <input type="text" id="name" placeholder="dp10.jpg">
+    <input type="file" id="fileInput" accept="image/*">
+    <input type="text" id="fileName" placeholder="dp10.jpg">
     <input type="text" id="tags" placeholder="anime,boy,dark">
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
-<p id="debug"></p>
-
-<!-- Supabase CDN -->
+<!-- Supabase (NON-MODULE version – works everywhere) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-// ================= CONFIG =================
-const URL = "https://uekehssbugjcdjopietz.supabase.co";
-const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"; 
+// ====================== CONFIG ======================
+const URL  = "https://uekehssbugjcdjopietz.supabase.co";
+const KEY  = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const PASS = "@kumaad";  // your password
 const BUCKET = "images";
-const PASS = "@kumaad"; // ---- change when needed
 
 const db = supabase.createClient(URL, KEY);
 
-// Debug logger
-function log(x){
-    document.getElementById("debug").textContent += x+"\n";
-}
 
-// ================= PAGE LOADED =================
-log("Admin Loaded Successfully");
-
-// ================= LOGIN =================
-document.getElementById("loginBtn").onclick = ()=>{
-    log("Login button clicked");
-
+// ====================== LOGIN ======================
+document.getElementById("loginBtn").onclick = () => {
     const val = document.getElementById("pass").value;
 
     if(val === PASS){
-        log("✔ Correct password - Opening panel");
         document.getElementById("login").style.display="none";
         document.getElementById("panel").style.display="block";
-    }else{
-        log("✘ Wrong password");
-        document.getElementById("log").innerHTML="❌ Incorrect Password";
+    } else {
+        document.getElementById("log").innerHTML = "❌ Wrong Password";
     }
 };
 
-// ================= UPLOAD =================
+
+// ====================== UPLOAD ======================
 document.getElementById("uploadBtn").onclick = async ()=>{
-    log("Upload button clicked");
 
-    const file = document.getElementById("file").files[0];
-    const name = document.getElementById("name").value.trim();
-    const tags = document.getElementById("tags").value.split(",").map(x=>x.trim()).filter(Boolean);
-
+    const file = document.getElementById("fileInput").files[0];
+    const name = document.getElementById("fileName").value.trim();
+    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim()).filter(Boolean);
     const status = document.getElementById("status");
 
     if(!file || !name){
-        status.innerHTML="⚠ Enter filename & select image";
+        status.innerHTML="⚠ Enter file & name";
         return;
     }
 
-    status.innerHTML="Uploading image...";
-    log("Uploading to Supabase Storage: "+name);
+    status.innerHTML="Uploading ⏳...";
 
-    const upload = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-    log("Storage Response: "+JSON.stringify(upload));
+    // 1️⃣ upload to bucket
+    let up = await db.storage.from(BUCKET).upload(name, file, { upsert:true });
+    if(up.error){ status.innerHTML="❌ Upload failed"; console.log(up.error); return;}
 
-    if(upload.error){
-        status.innerHTML="❌ Upload Failed";
-        log("Upload Error: "+upload.error.message);
-        return;
-    }
-
-    status.innerHTML="Saving to database...";
-    log("Saving DB Record...");
-
-    const dbInsert = await db.from("images").insert([{file:name,tags:tags}]);
-    log("DB Response: "+JSON.stringify(dbInsert));
+    // 2️⃣ insert database row
+    let dbInsert = await db.from("images").insert([{ file:name, tags:tags }]);
 
     if(dbInsert.error){
         status.innerHTML="❌ DB Insert Failed";
-        log("DB Error: "+dbInsert.error.message);
+        console.log(dbInsert.error);
         return;
     }
 
-    status.innerHTML="✅ Upload Successful!";
-    log("✔ All done!");
+    status.innerHTML="✅ Uploaded Successfully!";
 };
 </script>
 
