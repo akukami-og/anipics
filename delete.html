@@ -2,63 +2,42 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Delete Images</title>
+<title>Delete Images - Admin</title>
 
 <style>
 body{
-  background:#000;color:#fff;font-family:Arial;
-  text-align:center;padding:25px;
+  background:#000;color:#fff;font-family:Poppins,Arial;
+  text-align:center;padding:20px;
 }
-#box{
-  background:#111;padding:20px;border-radius:10px;
-  max-width:400px;margin:auto;
-  box-shadow:0 0 15px red;
+#list{max-width:800px;margin:auto;}
+.item{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#0d0d0d;padding:10px 15px;margin:8px 0;border-radius:8px;
+  border:1px solid #ff1a1a; box-shadow:0 0 12px rgba(255,0,0,.5);
 }
-input,button{
-  width:90%;padding:12px;margin:8px 0;
-  border:none;border-radius:6px;font-size:16px;
+.item img{
+  width:60px;height:60px;border-radius:10px;object-fit:cover;
+  border:2px solid #ff1a1a;box-shadow:0 0 10px red;
 }
-input{background:#1a1a1a;color:#fff;}
+.file{flex:1;margin-left:15px;text-align:left;}
+.tag{color:#ff3c3c;font-size:12px;}
 button{
-  background:#ff1a1a;color:white;font-weight:bold;cursor:pointer;
+  background:#ff1a1a;color:#fff;border:none;padding:7px 14px;
+  cursor:pointer;border-radius:6px;font-weight:600;
 }
-button:hover{opacity:.85;}
-#msg{margin-top:10px;font-size:16px;}
+button:hover{opacity:.8;}
 </style>
 </head>
+
 <body>
 
-<h2>🗑 Delete Image from Storage & Database</h2>
-<div id="box">
-  <input id="name" type="text" placeholder="filename.jpg">
-  <button onclick="deleteFile()">Delete</button>
-  <p id="msg"></p>
-</div>
+<h2>Delete Images Admin Panel</h2>
+<p style="opacity:.7;margin-bottom:15px;">Click delete to remove permanently (no confirmation)</p>
+
+<div id="list"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const db = supabase.createClient(
- "https://uekehssbugjcdjopietz.supabase.co",
- "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"
-);
-const BUCKET="images";
-
-async function deleteFile(){
-  let file=document.getElementById("name").value.trim();
-  let msg=document.getElementById("msg");
-
-  if(!file){msg.innerHTML="⚠ Enter file name";return;}
-
-  // delete from storage
-  const s = await db.storage.from(BUCKET).remove([file]);
-  if(s.error){msg.innerHTML="❌ Storage delete failed";return;}
-
-  // delete entry from database table
-  await db.from("images").delete().eq("file",file);
-
-  msg.innerHTML="✅ Deleted Successfully!";
-}
-</script>
+<script src="delete.js"></script>
 
 </body>
 </html>
