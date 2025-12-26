@@ -5,14 +5,14 @@
 <title>Admin Upload</title>
 
 <style>
-body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;}
-#login,#panel{width:90%;max-width:420px;margin:80px auto;padding:20px;}
-input,button{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
-input{background:#1f1f1f;color:#fff;}
-button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
-button:hover{opacity:.9;}
-#panel{display:none;background:#151515;border-radius:8px;}
-#status{margin-top:10px;font-size:15px;}
+    body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;padding-top:50px;}
+    #login,#panel{width:90%;max-width:420px;margin:auto;padding:25px;}
+    input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
+    input{background:#1c1c1c;color:#fff;}
+    button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
+    button:hover{opacity:.9;}
+    #panel{display:none;background:#141414;border-radius:8px;}
+    #status{margin-top:15px;font-size:16px;font-weight:bold;}
 </style>
 </head>
 
@@ -21,64 +21,77 @@ button:hover{opacity:.9;}
 <h2>Admin Login</h2>
 
 <div id="login">
-    <input type="password" id="pass" placeholder="Password">
+    <input type="password" id="pass" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
-    <p id="log" style="color:#ff5d5d;"></p>
+    <p id="log" style="color:#ff4d4d;font-size:15px;"></p>
 </div>
 
 <div id="panel">
-    <h2>Upload Image</h2>
+    <h2 style="margin-bottom:15px;">Upload Image</h2>
 
     <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="dp50.jpg">
+    <input type="text" id="fileName" placeholder="dp20.jpg">
     <input type="text" id="tagsInput" placeholder="anime,boy,dark">
     <button id="uploadBtn">Upload</button>
+
     <p id="status"></p>
 </div>
 
-<!-- Load Supabase (non-module works 100% on GitHub Pages) -->
+<!-- Supabase CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* CONFIG */
+/* =============== CONFIG =============== */
 const URL = "https://uekehssbugjcdjopietz.supabase.co";
 const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const PASS = "@kumaad";
+const PASS = "@kumaad";                     // your admin password
 const BUCKET = "images";
 
 const db = supabase.createClient(URL, KEY);
 
-/* LOGIN */
+
+/* =============== LOGIN =============== */
 document.getElementById("loginBtn").onclick = ()=>{
     if(document.getElementById("pass").value === PASS){
         document.getElementById("login").style.display="none";
         document.getElementById("panel").style.display="block";
-    } else document.getElementById("log").innerHTML="❌ Wrong Password";
+    }else{
+        document.getElementById("log").innerText="❌ Wrong password";
+    }
 };
 
-/* UPLOAD */
-document.getElementById("uploadBtn").onclick = async ()=>{
 
+/* =============== UPLOAD =============== */
+document.getElementById("uploadBtn").onclick = async ()=>{
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("fileName").value.trim();
     const tags = document.getElementById("tagsInput").value
-                    .split(",").map(x=>x.trim()).filter(x=>x);
+                .split(",").map(t=>t.trim()).filter(Boolean);
 
     const status = document.getElementById("status");
 
-    if(!file || !name){ status.innerHTML="⚠ Enter name & choose image"; return;}
+    if(!file || !name){
+        status.innerHTML = "⚠ Enter filename & select image";
+        return;
+    }
 
-    status.innerHTML="Uploading image...";
+    status.innerHTML = "📤 Uploading to storage...";
 
-    const up = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-    if(up.error){ status.innerHTML="❌ Upload Failed"; console.log(up.error); return;}
+    const up = await db.storage.from(BUCKET).upload(name, file,{upsert:true});
+    if(up.error){
+        status.innerHTML="❌ Storage upload failed";
+        console.log(up.error); return;
+    }
 
-    status.innerHTML="Saving database...";
+    status.innerHTML="📝 Saving to database...";
 
-    const row = await db.from("images").insert([{file:name,tags:tags}]);
-    if(row.error){ status.innerHTML="❌ DB Insert Failed"; console.log(row.error); return;}
+    const row = await db.from("images").insert([{file:name, tags:tags}]);
+    if(row.error){
+        status.innerHTML="❌ DB insert failed";
+        console.log(row.error); return;
+    }
 
-    status.innerHTML="✅ Upload Success!";
+    status.innerHTML="✅ Upload complete!";
 };
 </script>
 
