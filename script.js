@@ -24,150 +24,156 @@ const IMAGES_PER_PAGE=30;
 /*********************** INIT ***********************/
 init();
 async function init(){
-  await loadImages();
-  await loadLikes();
-  buildCategories();
-  renderImages();
-  enableRealtimeLikes();
-  loader.style.display="none";
+    await loadImages();
+    await loadLikes();
+    buildCategories();
+    renderImages();
+    enableRealtimeLikes();
+    loader.style.display="none";
 }
 
 /*********************** LOAD IMAGES ***********************/
 async function loadImages(){
-  const {data,error} = await db.from("images").select("*").order("id",{ascending:false});
-  if(error) return console.log(error);
+    const {data,error}=await db.from("images").select("*").order("id",{ascending:false});
+    if(error) return console.log(error);
 
-  allImages=data.map(i=>({
-    file:i.file,
-    tags:Array.isArray(i.tags)?i.tags:(typeof i.tags=="string"?JSON.parse(i.tags):[])
-  }));
+    allImages=data.map(i=>({
+        file:i.file,
+        tags:Array.isArray(i.tags)?i.tags:(typeof i.tags=="string"?JSON.parse(i.tags):[])
+    }));
 }
 
 /*********************** LOAD LIKES ***********************/
 async function loadLikes(){
-  const {data}=await db.from("likes").select("*");
-  if(!data) return;
-  data.forEach(e=>likeMap[e.image]=e.count);
+    const {data}=await db.from("likes").select("*");
+    if(!data) return;
+    data.forEach(e=>likeMap[e.image]=e.count);
 }
 
 /*********************** LIVE LIKE UPDATE ***********************/
 function enableRealtimeLikes(){
-  db.channel("likes-live")
-  .on("postgres_changes",{event:"UPDATE",table:"likes"},({new:r})=>{
-     likeMap[r.image]=r.count;
-     const btn=document.querySelector(`button[data-img="${r.image}"]`);
-     if(btn) btn.innerHTML=`❤️ Liked (${r.count})`;
-  }).subscribe();
+    db.channel("likes-live")
+    .on("postgres_changes",{event:"UPDATE",table:"likes"},({new:r})=>{
+        likeMap[r.image]=r.count;
+        const btn=document.querySelector(`button[data-img="${r.image}"]`);
+        if(btn) btn.innerHTML=`❤️ Liked (${r.count})`;
+    }).subscribe();
 }
 
-/*********************** CATEGORIES ***********************/
+/*********************** CATEGORY BUTTONS ***********************/
 function buildCategories(){
-  const tags=new Set();
-  allImages.forEach(img=>img.tags.forEach(t=>tags.add(t)));
+    const tags=new Set();
+    allImages.forEach(img=>img.tags.forEach(t=>tags.add(t)));
 
-  categoriesDiv.innerHTML=`<div class="category active">All</div>`;
-  document.querySelector(".category").onclick=()=>{activeTag="all";currentPage=1;renderImages();};
+    categoriesDiv.innerHTML=`<div class="category active">All</div>`;
+    document.querySelector(".category").onclick=()=>setCategory("all");
 
-  tags.forEach(tag=>{
-    const c=document.createElement("div");
-    c.className="category";
-    c.innerText=tag;
-    c.onclick=()=>{
-      activeTag=tag;
-      currentPage=1;
-      document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));
-      c.classList.add("active");
-      renderImages();
-    };
-    categoriesDiv.appendChild(c);
-  });
+    tags.forEach(tag=>{
+        const c=document.createElement("div");
+        c.className="category";
+        c.innerText=tag;
+        c.onclick=()=>setCategory(tag);
+        categoriesDiv.appendChild(c);
+    });
 }
 
-/*********************** RENDER IMAGES + PAGINATION ***********************/
+function setCategory(tag){
+    activeTag=tag; currentPage=1;
+    document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));
+    [...categoriesDiv.children].find(c=>c.innerText===tag).classList.add("active");
+    renderImages();
+}
+
+/*********************** RENDER IMAGES ***********************/
 function renderImages(){
-  gallery.innerHTML="";
+    gallery.innerHTML="";
 
-  const filtered=allImages.filter(img =>
-    (activeTag==="all"||img.tags.includes(activeTag)) &&
-    (img.file.toLowerCase().includes(searchInput.value.toLowerCase())||
-    img.tags.some(t=>t.toLowerCase().includes(searchInput.value.toLowerCase())))
-  );
+    const filtered=allImages.filter(img =>
+        (activeTag==="all"||img.tags.includes(activeTag)) &&
+        (img.file.toLowerCase().includes(searchInput.value.toLowerCase())||
+         img.tags.some(t=>t.toLowerCase().includes(searchInput.value.toLowerCase())))
+    );
 
-  const start=(currentPage-1)*IMAGES_PER_PAGE;
-  const pageImages=filtered.slice(start,start+IMAGES_PER_PAGE);
+    const start=(currentPage-1)*IMAGES_PER_PAGE;
+    const pageImages=filtered.slice(start,start+IMAGES_PER_PAGE);
 
-  pageImages.forEach((img,i)=>{
-    const URL=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+    pageImages.forEach((img,i)=>{
+        const url=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+        const card=document.createElement("div");
+        card.className="card";
+        card.style.setProperty("--i",i);
 
-    const card=document.createElement("div");
-    card.className="card";
-    card.style.setProperty("--i",i);
+        const image=document.createElement("img");
+        image.src=url;
+        image.onclick=()=>{preview.style.display="flex";previewImg.src=url;}
 
-    const image=document.createElement("img");
-    image.src=URL;
-    image.onclick=()=>{preview.style.display="flex";previewImg.src=URL;}
+        let liked=localStorage.getItem("liked_"+img.file)==="true";
+        let count=likeMap[img.file]||0;
 
-    let liked=localStorage.getItem("liked_"+img.file)==="true";
-    let count=likeMap[img.file]||0;
+        const likeBtn=document.createElement("button");
+        likeBtn.dataset.img=img.file;
+        likeBtn.innerHTML=liked?`❤️ Liked (${count})`:`🤍 Like (${count})`;
+        likeBtn.onclick=()=>likeImage(likeBtn,img.file,count);
 
-    const likeBtn=document.createElement("button");
-    likeBtn.dataset.img=img.file;
-    likeBtn.innerHTML=liked?`❤️ Liked (${count})`:`🤍 Like (${count})`;
-    likeBtn.onclick=async()=>{
-      if(liked) return;
-      liked=true;count++;localStorage.setItem("liked_"+img.file,"true");
-      await db.from("likes").upsert({image:img.file,count},{onConflict:"image"});
-      likeBtn.innerHTML=`❤️ Liked (${count})`;
-    };
+        const download=document.createElement("button");
+        download.innerText="⬇ Download";
+        download.onclick=()=>downloadImage(url,img.file);
 
-    const download=document.createElement("button");
-    download.innerText="⬇ Download";
-    download.onclick=()=>{
-      const link=document.createElement("a");
-      link.href=URL;
-      link.setAttribute("download",img.file);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    };
+        card.append(image,likeBtn,download);
+        gallery.append(card);
+    });
 
-    card.append(image,likeBtn,download);
-    gallery.append(card);
-  });
+    buildPagination(filtered.length);
+}
 
-  buildPagination(filtered.length);
+/*********************** LIKE SYSTEM ***********************/
+async function likeImage(btn,file,count){
+    if(localStorage.getItem("liked_"+file)==="true") return;
+    count++; localStorage.setItem("liked_"+file,"true");
+    await db.from("likes").upsert({image:file,count},{onConflict:"image"});
+    btn.innerHTML=`❤️ Liked (${count})`;
+}
+
+/*********************** DOWNLOAD FIX — Works Mobile ***********************/
+async function downloadImage(url,name){
+    const blob=await (await fetch(url)).blob();
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
 
 /*********************** PAGINATION ***********************/
 function buildPagination(total){
-  pagination.innerHTML="";
-  const totalPages=Math.ceil(total/IMAGES_PER_PAGE);
-  if(totalPages<=1) return;
+    pagination.innerHTML="";
+    const totalPages=Math.ceil(total/IMAGES_PER_PAGE);
+    if(totalPages<=1) return;
 
-  const prev=document.createElement("button");
-  prev.innerText="◀ Prev";
-  prev.disabled=currentPage===1;
-  prev.onclick=()=>{currentPage--;renderImages();scrollToTop();};
-  pagination.append(prev);
+    const prev=createPageBtn("◀ Prev",currentPage-1,currentPage>1);
+    pagination.append(prev);
 
-  for(let i=1;i<=totalPages;i++){
-    const btn=document.createElement("button");
-    btn.innerText=i;
-    btn.className=i===currentPage?"activePage":"pageBtn";
-    btn.onclick=()=>{currentPage=i;renderImages();scrollToTop();};
-    pagination.append(btn);
-  }
+    for(let i=1;i<=totalPages;i++){
+        const b=createPageBtn(i,i,i!==currentPage);
+        if(i===currentPage) b.classList.add("activePage");
+        pagination.append(b);
+    }
 
-  const next=document.createElement("button");
-  next.innerText="Next ▶";
-  next.disabled=currentPage===totalPages;
-  next.onclick=()=>{currentPage++;renderImages();scrollToTop();};
-  pagination.append(next);
+    const next=createPageBtn("Next ▶",currentPage+1,currentPage<totalPages);
+    pagination.append(next);
 }
 
-/*********************** Helpers ***********************/
+function createPageBtn(text,page,enabled){
+    const btn=document.createElement("button");
+    btn.innerText=text;
+    btn.disabled=!enabled;
+    if(enabled) btn.onclick=()=>{currentPage=page;renderImages();scrollToTop();}
+    return btn;
+}
+
+/*********************** UTILS ***********************/
 function scrollToTop(){
-  window.scrollTo({top:0,behavior:"smooth"});
+    window.scrollTo({top:0,behavior:"smooth"});
 }
 
 searchInput.oninput=()=>{currentPage=1;renderImages();}
