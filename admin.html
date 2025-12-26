@@ -12,7 +12,6 @@ input{background:#1f1f1f;color:#fff;}
 button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.9;}
 #panel{display:none;background:#151515;border-radius:8px;}
-#log,#status{margin-top:10px;font-size:15px;}
 </style>
 </head>
 
@@ -28,80 +27,63 @@ button:hover{opacity:.9;}
 
 <div id="panel">
     <h2>Upload Image</h2>
+
     <input type="file" id="fileInput" accept="image/*">
     <input type="text" id="fileName" placeholder="dp50.jpg">
-    <input type="text" id="tags" placeholder="anime,boy,dark">
+    <input type="text" id="tagsInput" placeholder="anime,boy,dark">
+
     <button id="uploadBtn">Upload</button>
-    <p id="status"></p>
+    <p id="status" style="margin-top:10px;font-size:15px;"></p>
 </div>
 
-<!-- LOG HERE (Temporary Debug Box) -->
-<p id="debug" style="margin-top:30px;color:#5dff87;font-size:14px;"></p>
-
 <script type="module">
-/* ===== DEBUG PRINT ===== */
-function dbg(msg){
-  document.getElementById("debug").innerHTML += msg+"<br>";
-}
 
-/* ===== Import Supabase ===== */
-dbg("Loading Supabase...");
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-dbg("Supabase Loaded OK");
-
-/* ===== Config ===== */
+/* SUPABASE CONFIG */
 const URL = "https://uekehssbugjcdjopietz.supabase.co";
 const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const PASS = "@kumaad";
 const BUCKET = "images";
 
 const db = createClient(URL, KEY);
-dbg("Client created");
 
-/* ===== LOGIN ===== */
+/* LOGIN */
 document.getElementById("loginBtn").onclick = ()=>{
-    let p = document.getElementById("pass").value;
-    dbg("Login clicked: " + p);
-
-    if(p === PASS){
-       dbg("Password correct!");
-       document.getElementById("login").style.display="none";
-       document.getElementById("panel").style.display="block";
-    } else {
-       dbg("Password wrong");
-       document.getElementById("log").innerHTML="❌ Wrong Password";
-    }
+    if(document.getElementById("pass").value === PASS){
+        document.getElementById("login").style.display="none";
+        document.getElementById("panel").style.display="block";
+    } else document.getElementById("log").innerHTML="❌ Wrong Password";
 };
 
-// -------- UPLOAD FIXED --------
-document.getElementById("upload").onclick = async () => {
-    let file = document.getElementById("file").files[0];
-    let name = document.getElementById("name").value.trim();
-    let tags = document.getElementById("tags").value
-                   .split(",")
-                   .map(t=>t.trim())
-                   .filter(t=>t.length>0);
+/* UPLOAD */
+document.getElementById("uploadBtn").onclick = async ()=>{
+    
+    const file = document.getElementById("fileInput").files[0];
+    const name = document.getElementById("fileName").value.trim();
+    const tags = document.getElementById("tagsInput").value
+                    .split(",")
+                    .map(v=>v.trim())
+                    .filter(v=>v.length>0);
 
-    let status = document.getElementById("status");
+    const status = document.getElementById("status");
 
-    if(!file || !name){ status.innerHTML="⚠ filename + image required"; return; }
+    if(!file || !name){status.innerHTML="⚠ Enter file name & choose image";return;}
 
-    status.innerHTML="Uploading... ⏳";
+    status.innerHTML="Uploading to storage... ⏳";
 
-    // upload to storage
-    const { error: uploadErr } = await db.storage.from(bucket)
-        .upload(name, file, { upsert:true });
-    if(uploadErr){ status.innerHTML="❌ Upload Failed"; return; }
+    const upload = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
+    if(upload.error){status.innerHTML="❌ Storage Upload Failed";console.log(upload.error);return;}
 
-    // INSERT WITH JSON FORMAT
-    const { error: dbErr } = await db.from("images")
-        .insert([{ file:name, tags: JSON.stringify(tags) }]);  //<--- FIX
+    status.innerHTML="Saving to database... ⏳";
 
-    if(dbErr){ status.innerHTML="❌ DB Insert Failed"; console.log(dbErr); return; }
+    const insert = await db.from("images").insert([{ file:name, tags:tags }]); // JSON OK for jsonb
 
-    status.innerHTML="✅ Successfully Uploaded & Saved!";
+    if(insert.error){status.innerHTML="❌ DB Insert Failed";console.log(insert.error);return;}
+
+    status.innerHTML="✅ Successfully Uploaded!";
 };
+
 </script>
 
 </body>
