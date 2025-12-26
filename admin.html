@@ -2,37 +2,35 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Upload</title>
+<title>Admin Upload Panel</title>
 
 <style>
-body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;padding-top:50px;}
-#login,#panel{width:90%;max-width:420px;margin:auto;padding:25px;}
-input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
+body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;padding-top:40px;}
+.box{width:90%;max-width:430px;margin:auto;padding:25px;}
+input,button{width:100%;padding:12px;margin:7px 0;border:none;border-radius:6px;font-size:16px;}
 input{background:#1c1c1c;color:#fff;}
-button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
+button{background:#ff0066;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.9;}
-#panel{display:none;background:#141414;border-radius:8px;}
-#status{margin-top:15px;font-size:16px;font-weight:bold;}
-#debug{font-size:14px;color:#0f0;margin-top:25px;}
+#panel{display:none;background:#111;border-radius:10px;}
+#debug{color:#00ff8c;font-size:13px;margin-top:20px;text-align:left;white-space:pre-line;}
 </style>
 </head>
 
 <body>
 
-<h2>Admin Login</h2>
+<h2>🔐 Admin Login</h2>
 
-<div id="login">
-    <input type="password" id="pass" placeholder="Password">
+<div id="login" class="box">
+    <input type="password" id="pass" placeholder="Enter Password">
     <button id="loginBtn">Login</button>
-    <p id="log" style="color:#ff4d4d;font-size:15px;"></p>
+    <p id="log" style="color:#ff4444;"></p>
 </div>
 
-<div id="panel">
-    <h2>Upload Image</h2>
-
-    <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="dp20.jpg">
-    <input type="text" id="tagsInput" placeholder="anime,boy,dark">
+<div id="panel" class="box">
+    <h2>📤 Upload DP</h2>
+    <input type="file" id="file" accept="image/*">
+    <input type="text" id="name" placeholder="dp10.jpg">
+    <input type="text" id="tags" placeholder="anime,boy,dark">
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
@@ -41,57 +39,60 @@ button:hover{opacity:.9;}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-function log(x){ document.getElementById("debug").innerHTML += x+"<br>"; }
 
-/* CONFIG */
+// ========== CONFIG ==========
 const URL = "https://uekehssbugjcdjopietz.supabase.co";
 const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const PASS = "@kumaad";
 const BUCKET = "images";
 
-log("Creating client...");
 const db = supabase.createClient(URL, KEY);
-log("Client created");
 
-/* LOGIN */
-document.getElementById("loginBtn").onclick = ()=>{
-    log("Login button clicked");
+// Debug print
+function log(x){ document.getElementById("debug").innerHTML += x+"\n"; }
+
+
+// ========== LOGIN ==========
+document.getElementById("loginBtn").onclick = () =>{
+    log("Login pressed");
+
     if(document.getElementById("pass").value === PASS){
-        log("Password correct -> Opening panel");
+        log("Password correct → Panel opened");
         document.getElementById("login").style.display="none";
         document.getElementById("panel").style.display="block";
     }else{
-        log("Wrong password");
-        document.getElementById("log").innerText="❌ Wrong password";
+        log("❌ Wrong password");
+        document.getElementById("log").innerText="❌ Wrong Password";
     }
 };
 
-/* UPLOAD */
+
+// ========== UPLOAD ==========
 document.getElementById("uploadBtn").onclick = async ()=>{
     log("Upload button clicked");
 
-    const file=document.getElementById("fileInput").files[0];
-    const name=document.getElementById("fileName").value.trim();
-    const tags=document.getElementById("tagsInput").value.split(",").map(x=>x.trim()).filter(Boolean);
+    const file=document.getElementById("file").files[0];
+    const name=document.getElementById("name").value.trim();
+    const tags=document.getElementById("tags").value.split(",").map(t=>t.trim()).filter(Boolean);
     const status=document.getElementById("status");
 
-    if(!file || !name){ status.innerHTML="⚠ Enter name & select file"; return; }
+    if(!file || !name){ status.innerHTML="⚠ Enter file name + choose image"; return; }
 
-    status.innerHTML="📤 Uploading...";
-    log("Uploading to storage...");
+    status.innerHTML="Uploading...";
+    log("Uploading to bucket...");
 
     const up=await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-    log(JSON.stringify(up));
+    log("Upload result: "+JSON.stringify(up));
 
-    if(up.error){ status.innerHTML="❌ Upload failed"; return; }
+    if(up.error){ status.innerHTML="❌ Upload Failed"; return; }
 
-    status.innerHTML="📝 Saving DB...";
+    status.innerHTML="Saving to DB...";
     const row=await db.from("images").insert([{file:name,tags:tags}]);
+    log("DB insert: "+JSON.stringify(row));
 
-    log(JSON.stringify(row));
-    if(row.error){ status.innerHTML="❌ DB insert failed"; return; }
+    if(row.error){ status.innerHTML="❌ DB Insert Failed"; return; }
 
-    status.innerHTML="✅ Upload Success!";
+    status.innerHTML="✅ Uploaded Successfully!";
 };
 </script>
 
