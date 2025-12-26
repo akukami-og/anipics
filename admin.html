@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Uploader</title>
+<title>Admin Uploader</title>
 
 <style>
 body{background:#000;color:#fff;font-family:Arial;text-align:center;padding:30px;}
@@ -10,17 +10,29 @@ input,button{width:90%;padding:12px;margin:8px 0;border:none;border-radius:6px;f
 input{background:#1f1f1f;color:#fff;}
 button{background:#ff0066;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.85;}
-#box{background:#151515;padding:20px;border-radius:8px;display:inline-block;width:92%;max-width:420px;}
+
+#login,#panel{background:#151515;padding:25px;border-radius:8px;display:inline-block;width:92%;max-width:420px;}
+#panel{display:none;}
 #status{margin-top:10px;font-size:16px;color:#4dff8d;}
-#debug{margin-top:30px;color:#00e5ff;font-size:13px;white-space:pre-line;}
+#debug{margin-top:25px;color:#00e5ff;font-size:13px;white-space:pre-line;}
 </style>
 </head>
 
 <body>
 
-<h2>Image Upload Panel</h2>
+<h2>Admin Login</h2>
 
-<div id="box">
+<!-- LOGIN SCREEN -->
+<div id="login">
+    <input type="password" id="pass" placeholder="Enter Password">
+    <button id="loginBtn">Login</button>
+    <p id="log" style="color:#ff4d4d;"></p>
+</div>
+
+<!-- UPLOAD PANEL -->
+<div id="panel">
+    <h2>Upload Image</h2>
+
     <input type="file" id="file" accept="image/*">
     <input type="text" id="name" placeholder="dp100.jpg">
     <input type="text" id="tags" placeholder="anime,boy,blue">
@@ -31,49 +43,62 @@ button:hover{opacity:.85;}
 <p id="debug"></p>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-// ================= CONFIG =================
+// ---------------- CONFIG ----------------
+const PASS = "@kumaad"; // <--- Change password here anytime
+
 const db = supabase.createClient(
  "https://uekehssbugjcdjopietz.supabase.co",
  "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"
 );
-const BUCKET="images";
+const BUCKET = "images";
 
-// Debug log
 function log(x){ document.getElementById("debug").innerHTML+=x+"\n"; }
 
-// ================= UPLOAD =================
+// ---------------- LOGIN ----------------
+document.getElementById("loginBtn").onclick = ()=>{
+    let val = document.getElementById("pass").value;
+    log("Login attempt: " + val);
+
+    if(val === PASS){
+        log("✔ Login success");
+        document.getElementById("login").style.display="none";
+        document.getElementById("panel").style.display="block";
+    }else{
+        log("❌ Wrong password");
+        document.getElementById("log").innerHTML="Incorrect password";
+    }
+};
+
+// ---------------- UPLOAD ----------------
 document.getElementById("uploadBtn").onclick = async ()=>{
+    log("Upload clicked");
 
-    log("Upload pressed");
+    let file=document.getElementById("file").files[0];
+    let name=document.getElementById("name").value.trim();
+    let tags=document.getElementById("tags").value.split(",").map(t=>t.trim()).filter(Boolean);
 
-    const file=document.getElementById("file").files[0];
-    const name=document.getElementById("name").value.trim();
-    const tags=document.getElementById("tags").value.split(",")
-                .map(t=>t.trim()).filter(Boolean);
+    let status=document.getElementById("status");
 
-    const status=document.getElementById("status");
-
-    if(!file||!name) return status.innerHTML="⚠ Enter filename + choose image";
+    if(!file || !name){ status.innerHTML="⚠ File + Name Needed"; return; }
 
     status.innerHTML="Uploading...";
-    log("Uploading to Storage...");
+    log("Uploading → storage");
 
     const upload = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-    log("Upload → "+JSON.stringify(upload));
+    log("Storage → " + JSON.stringify(upload));
 
-    if(upload.error){ status.innerHTML="❌ Upload failed";return;}
+    if(upload.error){ status.innerHTML="❌ Upload Failed"; return; }
 
-    const save = await db.from("images").insert([{file:name,tags:tags}]);
-    log("DB Save → "+JSON.stringify(save));
+    log("Saving DB row...");
+    const insert = await db.from("images").insert([{file:name,tags:tags}]);
+    log("DB → " + JSON.stringify(insert));
 
-    if(save.error){ status.innerHTML="❌ Database insert failed";return;}
+    if(insert.error){ status.innerHTML="❌ DB Insert Failed"; return; }
 
-    status.innerHTML="✅ Uploaded Successfully!";
-    log("DONE ✔");
-}
+    status.innerHTML="✅ Successfully Uploaded!";
+    log("✔ Complete");
+};
 </script>
-
 </body>
 </html>
