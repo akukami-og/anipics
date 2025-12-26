@@ -2,95 +2,77 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
+<title>Uploader</title>
+
 <style>
-body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;}
-#login,#panel{width:90%;max-width:420px;margin:70px auto;padding:20px;}
-input,button{width:100%;padding:10px;margin:6px 0;border:none;border-radius:6px;font-size:16px;}
-input{background:#1d1d1d;color:#fff;}
+body{background:#000;color:#fff;font-family:Arial;text-align:center;padding:30px;}
+input,button{width:90%;padding:12px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
+input{background:#1f1f1f;color:#fff;}
 button{background:#ff0066;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.85;}
-#panel{display:none;background:#161616;border-radius:8px;}
-#status{margin-top:10px;font-size:15px;color:#00ff8c;}
+#box{background:#151515;padding:20px;border-radius:8px;display:inline-block;width:92%;max-width:420px;}
+#status{margin-top:10px;font-size:16px;color:#4dff8d;}
+#debug{margin-top:30px;color:#00e5ff;font-size:13px;white-space:pre-line;}
 </style>
 </head>
 
 <body>
 
-<h2>Admin Login</h2>
+<h2>Image Upload Panel</h2>
 
-<!-- LOGIN -->
-<div id="login">
-    <input type="password" id="pass" placeholder="Enter Password">
-    <button id="loginBtn">Login</button>
-    <p id="log" style="color:#ff4d4d;"></p>
-</div>
-
-<!-- UPLOAD PANEL -->
-<div id="panel">
-    <h2>Upload Image</h2>
-    <input type="file" id="fileInput" accept="image/*">
-    <input type="text" id="fileName" placeholder="dp10.jpg">
-    <input type="text" id="tags" placeholder="anime,boy,dark">
+<div id="box">
+    <input type="file" id="file" accept="image/*">
+    <input type="text" id="name" placeholder="dp100.jpg">
+    <input type="text" id="tags" placeholder="anime,boy,blue">
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
-<!-- Supabase (NON-MODULE version – works everywhere) -->
+<p id="debug"></p>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-// ====================== CONFIG ======================
-const URL  = "https://uekehssbugjcdjopietz.supabase.co";
-const KEY  = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const PASS = "@kumaad";  // your password
-const BUCKET = "images";
+// ================= CONFIG =================
+const db = supabase.createClient(
+ "https://uekehssbugjcdjopietz.supabase.co",
+ "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"
+);
+const BUCKET="images";
 
-const db = supabase.createClient(URL, KEY);
+// Debug log
+function log(x){ document.getElementById("debug").innerHTML+=x+"\n"; }
 
-
-// ====================== LOGIN ======================
-document.getElementById("loginBtn").onclick = () => {
-    const val = document.getElementById("pass").value;
-
-    if(val === PASS){
-        document.getElementById("login").style.display="none";
-        document.getElementById("panel").style.display="block";
-    } else {
-        document.getElementById("log").innerHTML = "❌ Wrong Password";
-    }
-};
-
-
-// ====================== UPLOAD ======================
+// ================= UPLOAD =================
 document.getElementById("uploadBtn").onclick = async ()=>{
 
-    const file = document.getElementById("fileInput").files[0];
-    const name = document.getElementById("fileName").value.trim();
-    const tags = document.getElementById("tags").value.split(",").map(t=>t.trim()).filter(Boolean);
-    const status = document.getElementById("status");
+    log("Upload pressed");
 
-    if(!file || !name){
-        status.innerHTML="⚠ Enter file & name";
-        return;
-    }
+    const file=document.getElementById("file").files[0];
+    const name=document.getElementById("name").value.trim();
+    const tags=document.getElementById("tags").value.split(",")
+                .map(t=>t.trim()).filter(Boolean);
 
-    status.innerHTML="Uploading ⏳...";
+    const status=document.getElementById("status");
 
-    // 1️⃣ upload to bucket
-    let up = await db.storage.from(BUCKET).upload(name, file, { upsert:true });
-    if(up.error){ status.innerHTML="❌ Upload failed"; console.log(up.error); return;}
+    if(!file||!name) return status.innerHTML="⚠ Enter filename + choose image";
 
-    // 2️⃣ insert database row
-    let dbInsert = await db.from("images").insert([{ file:name, tags:tags }]);
+    status.innerHTML="Uploading...";
+    log("Uploading to Storage...");
 
-    if(dbInsert.error){
-        status.innerHTML="❌ DB Insert Failed";
-        console.log(dbInsert.error);
-        return;
-    }
+    const upload = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
+    log("Upload → "+JSON.stringify(upload));
+
+    if(upload.error){ status.innerHTML="❌ Upload failed";return;}
+
+    const save = await db.from("images").insert([{file:name,tags:tags}]);
+    log("DB Save → "+JSON.stringify(save));
+
+    if(save.error){ status.innerHTML="❌ Database insert failed";return;}
 
     status.innerHTML="✅ Uploaded Successfully!";
-};
+    log("DONE ✔");
+}
 </script>
 
 </body>
