@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<title>Delete Panel - Admin</title>
+<link rel="stylesheet" href="style.css"> <!-- uses same theme -->
+<style>
+/* highlight this panel as admin page */
+h2 { color:#ff1a1a; margin-top:25px; text-shadow:0 0 18px red; }
+.delete-btn{
+  background:#550000 !important;
+  border-color:#ff1a1a;
+}
+.delete-btn:hover{
+  background:red !important;
+  box-shadow:0 0 35px red;
+}
+</style>
+</head>
+<body>
+
+<h2>🗑 Admin Delete Panel</h2>
+
+<div class="gallery" id="delGallery"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="delete.js"></script>
+
+</body>
+</html>
