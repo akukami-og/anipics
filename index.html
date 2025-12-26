@@ -1,57 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Anime DP</title>
+<title>Anime DP</title>
 
-  <!-- MAIN STYLES -->
-  <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- 🔥 NEON BACKGROUND -->
-  <div class="neon-bg"></div>
+<div class="neon-bg"></div>
 
-  <!-- 🔄 Loader -->
-  <div id="loader">
-    <div class="neon-ring"></div>
-    <p>Loading Anime DPs...</p>
-  </div>
+<!-- Loader -->
+<div id="loader">
+  <div class="neon-ring"></div>
+  <p>Loading Anime DPs...</p>
+</div>
 
-  <!-- ⭐ Title -->
-  <h1>ANIME DP</h1>
+<h1>ANIME DP</h1>
 
-  <!-- 🔍 Search -->
-  <input type="text" id="search" placeholder="Search anime DP..." autocomplete="off" />
+<input type="text" id="search" placeholder="Search anime dp..." autocomplete="off">
 
-  <!-- 🏷 Category section -->
-  <div id="categories"></div>
+<!-- Categories -->
+<div id="categories"></div>
 
-  <!-- 🖼 Gallery -->
-  <div class="gallery" id="gallery"></div>
+<!-- Gallery -->
+<div class="gallery" id="gallery"></div>
 
-  <!-- ⬇ Pagination Buttons -->
-  <div id="pagination" style="margin:25px 0;"></div> <!-- 🆕 Added -->
+<!-- Pagination -->
+<div id="pagination"></div>
 
-  <!-- 📌 Footer -->
-  <footer class="site-footer">
-    <p>© <span id="year"></span> Akukami · All rights reserved</p>
-    <p class="credit">Designed & created by <strong>Akukami</strong></p>
-  </footer>
+<!-- Preview -->
+<div id="preview">
+  <span id="close">✕</span>
+  <img id="previewImg" alt="image">
+</div>
 
-  <!-- 🖼 Full Preview -->
-  <div id="preview">
-    <span id="close">✕</span>
-    <img id="previewImg" alt="DP Preview" />
-  </div>
+<footer class="site-footer">
+  © <span id="year"></span> Akukami · All rights reserved
+  <div class="credit">Designed & Created by <b>Akukami</b></div>
+</footer>
 
-  <!-- Supabase JS MUST Load First -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Your Main Script -->
-  <script src="script.js" defer></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js" defer></script>
 </body>
 </html>
