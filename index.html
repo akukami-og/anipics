@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,57 +6,51 @@
 
   <title>Anime DP</title>
 
-  <!-- MAIN STYLE -->
+  <!-- MAIN STYLES -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- NEON ANIMATED BACKGROUND -->
+  <!-- 🔥 NEON BACKGROUND -->
   <div class="neon-bg"></div>
 
-  <!-- LOADER -->
+  <!-- 🔄 Loader -->
   <div id="loader">
     <div class="neon-ring"></div>
     <p>Loading Anime DPs...</p>
   </div>
 
-  <!-- TITLE -->
+  <!-- ⭐ Title -->
   <h1>ANIME DP</h1>
 
-  <!-- SEARCH BAR -->
-  <input
-    type="text"
-    id="search"
-    placeholder="Search anime DP..."
-    autocomplete="off"
-  />
+  <!-- 🔍 Search -->
+  <input type="text" id="search" placeholder="Search anime DP..." autocomplete="off" />
 
-  <!-- CATEGORIES -->
+  <!-- 🏷 Category section -->
   <div id="categories"></div>
 
-  <!-- GALLERY -->
+  <!-- 🖼 Gallery -->
   <div class="gallery" id="gallery"></div>
 
-  <!-- FOOTER -->
+  <!-- ⬇ Pagination Buttons -->
+  <div id="pagination" style="margin:25px 0;"></div> <!-- 🆕 Added -->
+
+  <!-- 📌 Footer -->
   <footer class="site-footer">
-    <p>
-      © <span id="year"></span> Akukami · All rights reserved
-    </p>
-    <p class="credit">
-      Designed & created by <strong>Akukami</strong>
-    </p>
+    <p>© <span id="year"></span> Akukami · All rights reserved</p>
+    <p class="credit">Designed & created by <strong>Akukami</strong></p>
   </footer>
 
-  <!-- FULL SCREEN PREVIEW -->
+  <!-- 🖼 Full Preview -->
   <div id="preview">
     <span id="close">✕</span>
     <img id="previewImg" alt="DP Preview" />
   </div>
 
-  <!-- SUPABASE CLIENT (MUST LOAD FIRST) -->
+  <!-- Supabase JS MUST Load First -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- MAIN SCRIPT -->
+  <!-- Your Main Script -->
   <script src="script.js" defer></script>
 
 </body>
