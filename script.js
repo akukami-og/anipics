@@ -1,6 +1,6 @@
-/***********************
+/*********************************
  * 🔥 SUPABASE CONFIG
- ***********************/
+ *********************************/
 const SUPABASE_URL = "https://uekehssbugjcdjopietz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const BUCKET = "images";
@@ -8,9 +8,9 @@ const BUCKET = "images";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
-/***********************
+/*********************************
  * DOM ELEMENTS
- ***********************/
+ *********************************/
 const gallery = document.getElementById("gallery");
 const preview = document.getElementById("preview");
 const previewImg = document.getElementById("previewImg");
@@ -21,9 +21,9 @@ const loader = document.getElementById("loader");
 const pagination = document.getElementById("pagination");
 
 
-/***********************
+/*********************************
  * VARIABLES
- ***********************/
+ *********************************/
 let allImages = [];
 let likeMap = {};
 let activeTag = "all";
@@ -31,25 +31,23 @@ let currentPage = 1;
 const IMAGES_PER_PAGE = 30;
 
 
-/***********************
- * START APP
- ***********************/
+/*********************************
+ * INIT
+ *********************************/
 init();
 async function init(){
     await loadImages();
     await loadLikes();
-
     buildCategories();
     renderImages();
     enableRealtimeLikes();
-
     hideLoader();
 }
 
 
-/***********************
- * LOAD IMAGES FROM DB
- ***********************/
+/*********************************
+ * LOAD IMAGES
+ *********************************/
 async function loadImages(){
     const { data, error } = await db.from("images").select("*").order("id",{ascending:false});
     if(error) return console.log("Image Load Error:", error);
@@ -57,14 +55,14 @@ async function loadImages(){
     allImages = data.map(i => ({
         file: i.file,
         tags: Array.isArray(i.tags) ? i.tags :
-              typeof i.tags==="string" ? JSON.parse(i.tags) : []
+              typeof i.tags === "string" ? JSON.parse(i.tags) : []
     }));
 }
 
 
-/***********************
- * LOAD LIKES
- ***********************/
+/*********************************
+ * LOAD LIKE COUNTS
+ *********************************/
 async function loadLikes(){
     const { data } = await db.from("likes").select("*");
     if(!data) return;
@@ -73,22 +71,23 @@ async function loadLikes(){
 }
 
 
-/***********************
+/*********************************
  * REALTIME LIKE UPDATE
- ***********************/
+ *********************************/
 function enableRealtimeLikes(){
     db.channel("like-channel")
       .on("postgres_changes",{event:"UPDATE",table:"likes"},({new:r})=>{
           likeMap[r.image]=r.count;
           const btn=document.querySelector(`button[data-img="${r.image}"]`);
           if(btn) btn.innerHTML=`❤️ Liked (${r.count})`;
-      }).subscribe();
+      })
+      .subscribe();
 }
 
 
-/***********************
+/*********************************
  * CATEGORY BUTTONS
- ***********************/
+ *********************************/
 function buildCategories(){
     const tags = new Set();
     allImages.forEach(img => img.tags.forEach(t=>tags.add(t)));
@@ -113,9 +112,9 @@ function buildCategories(){
 }
 
 
-/***********************
+/*********************************
  * RENDER IMAGES + PAGINATION
- ***********************/
+ *********************************/
 function renderImages(){
     gallery.innerHTML="";
 
@@ -132,11 +131,13 @@ function renderImages(){
 
     pageImages.forEach((img,i)=>{
         const card=document.createElement("div");
-        card.className="card"; card.style.setProperty("--i", i);
+        card.className="card"; 
+        card.style.setProperty("--i", i);
 
         const image=document.createElement("img");
-        image.src=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
-        image.onclick=()=>{preview.style.display="flex";previewImg.src=image.src;}
+        const fileURL = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+        image.src=fileURL;
+        image.onclick=()=>{preview.style.display="flex";previewImg.src=fileURL;}
 
         let liked = localStorage.getItem("liked_"+img.file)==="true";
         let count = likeMap[img.file]||0;
@@ -144,6 +145,7 @@ function renderImages(){
         const likeBtn=document.createElement("button");
         likeBtn.dataset.img=img.file;
         likeBtn.innerHTML = liked?`❤️ Liked (${count})`:`🤍 Like (${count})`;
+
         likeBtn.onclick=async()=>{
             if(liked) return;
             liked=true;count++;
@@ -152,17 +154,22 @@ function renderImages(){
             likeBtn.innerHTML=`❤️ Liked (${count})`;
         };
 
-        // 🔥 REAL one-click download
+
+        /***********************
+         * ⬇ REAL ONE-CLICK DOWNLOAD
+         ***********************/
         const download=document.createElement("button");
         download.innerText="⬇ Download";
-        download.onclick=()=>{
+        download.onclick=async()=>{
+            const res = await fetch(fileURL);
+            const blob = await res.blob();
             const link=document.createElement("a");
-            link.href=image.src;
+            link.href=URL.createObjectURL(blob);
             link.download=img.file;
-            document.body.appendChild(link);
             link.click();
-            link.remove();
+            URL.revokeObjectURL(link.href);
         };
+
 
         card.append(image,likeBtn,download);
         gallery.append(card);
@@ -172,9 +179,9 @@ function renderImages(){
 }
 
 
-/***********************
- * PAGINATION BUTTONS
- ***********************/
+/*********************************
+ * PAGINATION
+ *********************************/
 function buildPagination(total){
     pagination.innerHTML="";
     const totalPages = Math.ceil(total/IMAGES_PER_PAGE);
@@ -190,21 +197,21 @@ function buildPagination(total){
 }
 
 
-/***********************
- * SEARCH LIVE FILTER
- ***********************/
+/*********************************
+ * SEARCH
+ *********************************/
 searchInput.oninput = ()=>{currentPage=1;renderImages();};
 
 
-/***********************
+/*********************************
  * PREVIEW CLOSE
- ***********************/
+ *********************************/
 closeBtn.onclick=()=>preview.style.display="none";
 preview.onclick=e=>{if(e.target===preview)preview.style.display="none";};
 
 
-/***********************
- * FOOTER + LOADER
- ***********************/
+/*********************************
+ * LOADER + FOOTER
+ *********************************/
 function hideLoader(){ loader.style.display="none"; }
 document.getElementById("year").innerText=new Date().getFullYear();
