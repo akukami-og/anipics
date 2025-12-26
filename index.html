@@ -6,43 +6,51 @@
 
 <title>Anime DP</title>
 
+<!-- Styles -->
 <link rel="stylesheet" href="style.css">
+
 </head>
 <body>
 
+<!-- 🔥 Neon Animated Background -->
 <div class="neon-bg"></div>
 
-<!-- Loader -->
+<!-- ⏳ Loader -->
 <div id="loader">
   <div class="neon-ring"></div>
   <p>Loading Anime DPs...</p>
 </div>
 
+<!-- 🏷 Main Title -->
 <h1>ANIME DP</h1>
 
+<!-- 🔍 Search Bar -->
 <input type="text" id="search" placeholder="Search anime dp..." autocomplete="off">
 
-<!-- Categories -->
+<!-- 🏷 Category Filter Buttons -->
 <div id="categories"></div>
 
-<!-- Gallery -->
+<!-- 🖼 Gallery -->
 <div class="gallery" id="gallery"></div>
 
-<!-- Pagination -->
-<div id="pagination"></div>
+<!-- 📄 Pagination -->
+<div id="pagination" style="margin-bottom:25px;"></div>
 
-<!-- Preview -->
+<!-- 🔎 Full Image Preview -->
 <div id="preview">
   <span id="close">✕</span>
-  <img id="previewImg" alt="image">
+  <img id="previewImg" alt="Preview">
 </div>
 
+<!-- ⚡ Footer -->
 <footer class="site-footer">
   © <span id="year"></span> Akukami · All rights reserved
   <div class="credit">Designed & Created by <b>Akukami</b></div>
 </footer>
 
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js" defer></script>
+
 </body>
 </html>
