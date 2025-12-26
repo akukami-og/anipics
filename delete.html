@@ -2,30 +2,63 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
-<title>Delete Panel - Admin</title>
-<link rel="stylesheet" href="style.css"> <!-- uses same theme -->
+<title>Delete Images</title>
+
 <style>
-/* highlight this panel as admin page */
-h2 { color:#ff1a1a; margin-top:25px; text-shadow:0 0 18px red; }
-.delete-btn{
-  background:#550000 !important;
-  border-color:#ff1a1a;
+body{
+  background:#000;color:#fff;font-family:Arial;
+  text-align:center;padding:25px;
 }
-.delete-btn:hover{
-  background:red !important;
-  box-shadow:0 0 35px red;
+#box{
+  background:#111;padding:20px;border-radius:10px;
+  max-width:400px;margin:auto;
+  box-shadow:0 0 15px red;
 }
+input,button{
+  width:90%;padding:12px;margin:8px 0;
+  border:none;border-radius:6px;font-size:16px;
+}
+input{background:#1a1a1a;color:#fff;}
+button{
+  background:#ff1a1a;color:white;font-weight:bold;cursor:pointer;
+}
+button:hover{opacity:.85;}
+#msg{margin-top:10px;font-size:16px;}
 </style>
 </head>
 <body>
 
-<h2>🗑 Admin Delete Panel</h2>
-
-<div class="gallery" id="delGallery"></div>
+<h2>🗑 Delete Image from Storage & Database</h2>
+<div id="box">
+  <input id="name" type="text" placeholder="filename.jpg">
+  <button onclick="deleteFile()">Delete</button>
+  <p id="msg"></p>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="delete.js"></script>
+<script>
+const db = supabase.createClient(
+ "https://uekehssbugjcdjopietz.supabase.co",
+ "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU"
+);
+const BUCKET="images";
+
+async function deleteFile(){
+  let file=document.getElementById("name").value.trim();
+  let msg=document.getElementById("msg");
+
+  if(!file){msg.innerHTML="⚠ Enter file name";return;}
+
+  // delete from storage
+  const s = await db.storage.from(BUCKET).remove([file]);
+  if(s.error){msg.innerHTML="❌ Storage delete failed";return;}
+
+  // delete entry from database table
+  await db.from("images").delete().eq("file",file);
+
+  msg.innerHTML="✅ Deleted Successfully!";
+}
+</script>
 
 </body>
 </html>
