@@ -2,102 +2,41 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Upload Panel</title>
+<title>Admin Upload</title>
 
 <style>
-body{background:#000;color:#fff;font-family:Arial;text-align:center;margin:0;padding-top:40px;}
-.box{width:90%;max-width:430px;margin:auto;padding:25px;}
-input,button{width:100%;padding:12px;margin:7px 0;border:none;border-radius:6px;font-size:16px;}
-input{background:#1c1c1c;color:#fff;}
-button{background:#ff0066;color:#fff;font-weight:bold;cursor:pointer;}
+body{background:#000;color:#fff;text-align:center;font-family:Arial;margin:0;}
+#login,#panel{width:90%;max-width:420px;margin:80px auto;padding:20px;}
+input,button{width:100%;padding:10px;margin:8px 0;border:none;border-radius:6px;font-size:16px;}
+input{background:#1f1f1f;color:#fff;}
+button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.9;}
-#panel{display:none;background:#111;border-radius:10px;}
-#debug{color:#00ff8c;font-size:13px;margin-top:20px;text-align:left;white-space:pre-line;}
+#panel{display:none;background:#151515;border-radius:8px;}
+#debug{color:#39ff69;font-size:12px;margin-top:20px;}
 </style>
 </head>
 
 <body>
 
-<h2>🔐 Admin Login</h2>
-
-<div id="login" class="box">
-    <input type="password" id="pass" placeholder="Enter Password">
+<h2>Admin Login</h2>
+<div id="login">
+    <input type="password" id="pass" placeholder="Password">
     <button id="loginBtn">Login</button>
-    <p id="log" style="color:#ff4444;"></p>
+    <p id="log"></p>
 </div>
 
-<div id="panel" class="box">
-    <h2>📤 Upload DP</h2>
-    <input type="file" id="file" accept="image/*">
-    <input type="text" id="name" placeholder="dp10.jpg">
-    <input type="text" id="tags" placeholder="anime,boy,dark">
+<div id="panel">
+    <h2>Upload Image</h2>
+    <input type="file" id="fileInput">
+    <input type="text" id="fileName" placeholder="dp50.jpg">
+    <input type="text" id="tagsInput" placeholder="anime,boy,dark">
     <button id="uploadBtn">Upload</button>
     <p id="status"></p>
 </div>
 
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- Your Admin Logic (external file) -->
-<script src="admin.js?v=1"></script>
-
 <p id="debug"></p>
 
-// ========== CONFIG ==========
-const URL = "https://uekehssbugjcdjopietz.supabase.co";
-const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const PASS = "@kumaad";
-const BUCKET = "images";
-
-const db = supabase.createClient(URL, KEY);
-
-// Debug print
-function log(x){ document.getElementById("debug").innerHTML += x+"\n"; }
-
-
-// ========== LOGIN ==========
-document.getElementById("loginBtn").onclick = () =>{
-    log("Login pressed");
-
-    if(document.getElementById("pass").value === PASS){
-        log("Password correct → Panel opened");
-        document.getElementById("login").style.display="none";
-        document.getElementById("panel").style.display="block";
-    }else{
-        log("❌ Wrong password");
-        document.getElementById("log").innerText="❌ Wrong Password";
-    }
-};
-
-
-// ========== UPLOAD ==========
-document.getElementById("uploadBtn").onclick = async ()=>{
-    log("Upload button clicked");
-
-    const file=document.getElementById("file").files[0];
-    const name=document.getElementById("name").value.trim();
-    const tags=document.getElementById("tags").value.split(",").map(t=>t.trim()).filter(Boolean);
-    const status=document.getElementById("status");
-
-    if(!file || !name){ status.innerHTML="⚠ Enter file name + choose image"; return; }
-
-    status.innerHTML="Uploading...";
-    log("Uploading to bucket...");
-
-    const up=await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-    log("Upload result: "+JSON.stringify(up));
-
-    if(up.error){ status.innerHTML="❌ Upload Failed"; return; }
-
-    status.innerHTML="Saving to DB...";
-    const row=await db.from("images").insert([{file:name,tags:tags}]);
-    log("DB insert: "+JSON.stringify(row));
-
-    if(row.error){ status.innerHTML="❌ DB Insert Failed"; return; }
-
-    status.innerHTML="✅ Uploaded Successfully!";
-};
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js?v=2"></script> <!-- IMPORTANT -->
 </body>
 </html>
