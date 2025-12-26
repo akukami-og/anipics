@@ -34,7 +34,11 @@ async function init() {
 
 /*********************** LOAD IMAGES ***********************/
 async function loadImages() {
-    const { data, error } = await db.from("images").select("*").order("id", { ascending: false });
+    const { data, error } = await db
+        .from("images")
+        .select("*")
+        .order("id", { ascending: false });
+
     if (error) return console.log("Image Load Error:", error);
 
     allImages = data.map(i => ({
@@ -53,20 +57,20 @@ async function loadLikes() {
 
 /*********************** REALTIME LIKE UPDATE ***********************/
 function enableRealtimeLikes() {
-    db.channel("likes-live")
-    .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "likes" },
-        payload => {
-            likeMap[payload.new.image] = payload.new.count;
-            const btn = document.querySelector(`button[data-img="${payload.new.image}"]`);
-            if (btn) btn.innerHTML = `❤️ ${payload.new.count}`;
-        }
-    )
-    .subscribe();
+    db.channel("likes-sync")
+        .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "likes" },
+            ({ new: r }) => {
+                likeMap[r.image] = r.count;
+                const btn = document.querySelector(`button[data-img="${r.image}"]`);
+                if (btn) btn.innerHTML = `❤️ ${r.count}`;
+            }
+        )
+        .subscribe();
 }
 
-/*********************** CATEGORIES ***********************/
+/*********************** CATEGORY BUILDER ***********************/
 function buildCategories() {
     const tags = new Set();
     allImages.forEach(img => img.tags.forEach(t => tags.add(t)));
@@ -86,7 +90,7 @@ function buildCategories() {
 function setCategory(tag) {
     activeTag = tag;
     currentPage = 1;
-    document.querySelectorAll(".category").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".category").forEach(e => e.classList.remove("active"));
     [...categoriesDiv.children].find(c => c.innerText === tag).classList.add("active");
     renderImages();
 }
@@ -105,8 +109,9 @@ function renderImages() {
     const start = (currentPage - 1) * IMAGES_PER_PAGE;
     const pageImages = filtered.slice(start, start + IMAGES_PER_PAGE);
 
-    pageImages.forEach((img) => {
+    pageImages.forEach(img => {
         const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+
         const card = document.createElement("div");
         card.className = "card";
 
@@ -124,7 +129,7 @@ function renderImages() {
     buildPagination(filtered.length);
 }
 
-/*********************** LIKE (Heart Only) ***********************/
+/*********************** LIKE BUTTON — ❤️ count only ***********************/
 function createLikeBtn(file) {
     let liked = localStorage.getItem("liked_" + file) === "true";
     let count = likeMap[file] || 0;
@@ -142,10 +147,18 @@ function createLikeBtn(file) {
         await db.from("likes").upsert({ image: file, count }, { onConflict: "image" });
         btn.innerHTML = `❤️ ${count}`;
     };
+
     return btn;
 }
 
-/*********************** DOWNLOAD ***********************/
+/*********************** DOWNLOAD BUTTON — ⬇ Download ***********************/
+function createDownloadBtn(url, name) {
+    const btn = document.createElement("button");
+    btn.innerHTML = "⬇ Download";
+    btn.onclick = () => downloadImage(url, name);
+    return btn;
+}
+
 async function downloadImage(url, name) {
     const blob = await (await fetch(url)).blob();
     const a = document.createElement("a");
@@ -153,14 +166,6 @@ async function downloadImage(url, name) {
     a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
-}
-
-function createDownloadBtn(url, name) {
-    const btn = document.createElement("button");
-    btn.innerText = "⬇";
-    btn.title = "Download";
-    btn.onclick = () => downloadImage(url, name);
-    return btn;
 }
 
 /*********************** PAGINATION ***********************/
@@ -180,11 +185,11 @@ function buildPagination(total) {
     pagination.append(createPageBtn("▶", currentPage + 1, currentPage < totalPages));
 }
 
-function createPageBtn(text, page, enabled) {
+function createPageBtn(text, page, active) {
     const btn = document.createElement("button");
     btn.innerText = text;
-    btn.disabled = !enabled;
-    if (enabled) btn.onclick = () => {
+    btn.disabled = !active;
+    if (active) btn.onclick = () => {
         currentPage = page;
         renderImages();
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -192,7 +197,7 @@ function createPageBtn(text, page, enabled) {
     return btn;
 }
 
-/*********************** PREVIEW ***********************/
+/*********************** PREVIEW SYSTEM ***********************/
 function showPreview(url) {
     previewImg.src = url;
     preview.style.display = "flex";
