@@ -12,6 +12,7 @@ input{background:#1f1f1f;color:#fff;}
 button{background:#ff0058;color:#fff;font-weight:bold;cursor:pointer;}
 button:hover{opacity:.9;}
 #panel{display:none;background:#151515;border-radius:8px;}
+#status{margin-top:10px;font-size:15px;}
 </style>
 </head>
 
@@ -31,22 +32,21 @@ button:hover{opacity:.9;}
     <input type="file" id="fileInput" accept="image/*">
     <input type="text" id="fileName" placeholder="dp50.jpg">
     <input type="text" id="tagsInput" placeholder="anime,boy,dark">
-
     <button id="uploadBtn">Upload</button>
-    <p id="status" style="margin-top:10px;font-size:15px;"></p>
+    <p id="status"></p>
 </div>
 
-<script type="module">
+<!-- Load Supabase (non-module works 100% on GitHub Pages) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-/* SUPABASE CONFIG */
+<script>
+/* CONFIG */
 const URL = "https://uekehssbugjcdjopietz.supabase.co";
 const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const PASS = "@kumaad";
 const BUCKET = "images";
 
-const db = createClient(URL, KEY);
+const db = supabase.createClient(URL, KEY);
 
 /* LOGIN */
 document.getElementById("loginBtn").onclick = ()=>{
@@ -58,32 +58,28 @@ document.getElementById("loginBtn").onclick = ()=>{
 
 /* UPLOAD */
 document.getElementById("uploadBtn").onclick = async ()=>{
-    
+
     const file = document.getElementById("fileInput").files[0];
     const name = document.getElementById("fileName").value.trim();
     const tags = document.getElementById("tagsInput").value
-                    .split(",")
-                    .map(v=>v.trim())
-                    .filter(v=>v.length>0);
+                    .split(",").map(x=>x.trim()).filter(x=>x);
 
     const status = document.getElementById("status");
 
-    if(!file || !name){status.innerHTML="⚠ Enter file name & choose image";return;}
+    if(!file || !name){ status.innerHTML="⚠ Enter name & choose image"; return;}
 
-    status.innerHTML="Uploading to storage... ⏳";
+    status.innerHTML="Uploading image...";
 
-    const upload = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-    if(upload.error){status.innerHTML="❌ Storage Upload Failed";console.log(upload.error);return;}
+    const up = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
+    if(up.error){ status.innerHTML="❌ Upload Failed"; console.log(up.error); return;}
 
-    status.innerHTML="Saving to database... ⏳";
+    status.innerHTML="Saving database...";
 
-    const insert = await db.from("images").insert([{ file:name, tags:tags }]); // JSON OK for jsonb
+    const row = await db.from("images").insert([{file:name,tags:tags}]);
+    if(row.error){ status.innerHTML="❌ DB Insert Failed"; console.log(row.error); return;}
 
-    if(insert.error){status.innerHTML="❌ DB Insert Failed";console.log(insert.error);return;}
-
-    status.innerHTML="✅ Successfully Uploaded!";
+    status.innerHTML="✅ Upload Success!";
 };
-
 </script>
 
 </body>
