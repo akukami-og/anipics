@@ -1,67 +1,56 @@
-const URL = "https://uekehssbugjcdjopietz.supabase.co";
-const KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
-const PASS = "@kumaad";
-const BUCKET = "images";
+/* Debug logger */
+function log(x){ document.getElementById("debug").textContent += x+"\n"; }
 
-const db = supabase.createClient(URL, KEY);
+/* Supabase */
+const URL="https://uekehssbugjcdjopietz.supabase.co";
+const KEY="sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
+const PASS="@kumaad";
+const BUCKET="images";
 
-document.addEventListener("DOMContentLoaded", () => {
+const db=supabase.createClient(URL,KEY);
+log("Supabase client loaded");
 
-    const log = (t)=> document.getElementById("debug").innerHTML += t+"<br>";
+/* LOGIN */
+document.getElementById("loginBtn").onclick=()=>{
+    log("Login clicked");
+    const p=document.getElementById("pass").value;
+    if(p===PASS){
+        log("Login success");
+        document.getElementById("login").style.display="none";
+        document.getElementById("panel").style.display="block";
+    } else {
+        document.getElementById("log").innerText="❌ Wrong Password";
+        log("Wrong password");
+    }
+};
 
-    log("JS Loaded OK");
+/* UPLOAD */
+document.getElementById("uploadBtn").onclick=async()=>{
+    log("Upload clicked");
 
-    // LOGIN
-    document.getElementById("loginBtn").onclick = ()=>{
-        let p = document.getElementById("pass").value;
-        log("Login Clicked");
+    const file=document.getElementById("fileInput").files[0];
+    const name=document.getElementById("fileName").value.trim();
+    const tags=document.getElementById("tagsInput").value.split(",").map(t=>t.trim());
 
-        if(p===PASS){
-            log("Password correct");
-            document.getElementById("login").style.display = "none";
-            document.getElementById("panel").style.display = "block";
-        } else {
-            document.getElementById("log").innerText="❌ Wrong Password";
-            log("Wrong password");
-        }
-    };
+    const status=document.getElementById("status");
 
-    // UPLOAD
-    document.getElementById("uploadBtn").onclick = async ()=>{
-        log("Upload Clicked");
+    if(!file || !name){
+        status.textContent="⚠ Select image & filename";
+        log("Upload failed - no input");
+        return;
+    }
 
-        const file = document.getElementById("fileInput").files[0];
-        const name = document.getElementById("fileName").value.trim();
-        const tags = document.getElementById("tagsInput").value.split(",").map(t=>t.trim());
+    status.textContent="Uploading...";
+    log("Uploading to storage...");
 
-        const status = document.getElementById("status");
+    const up=await db.storage.from(BUCKET).upload(name,file,{upsert:true});
+    if(up.error){ status.textContent="❌ Upload Failed"; log(JSON.stringify(up.error)); return; }
 
-        if(!file || !name){
-            status.innerText="⚠ Enter name & choose file";
-            return;
-        }
+    log("Storage OK, saving DB...");
 
-        status.innerText="Uploading...";
-        log("Uploading to bucket...");
+    const row=await db.from("images").insert([{file:name,tags:tags}]);
+    if(row.error){ status.textContent="❌ DB Insert Error"; log(JSON.stringify(row.error)); return; }
 
-        let up = await db.storage.from(BUCKET).upload(name,file,{upsert:true});
-        if(up.error){
-            status.innerText="❌ Upload Failed";
-            log(up.error.message);
-            return;
-        }
-
-        log("Saving DB...");
-        let row = await db.from("images").insert([{file:name,tags}]);
-
-        if(row.error){
-            status.innerText="❌ DB Insert Failed";
-            log(row.error.message);
-            return;
-        }
-
-        status.innerText="✅ Upload Success!";
-        log("Done!");
-    };
-
-});
+    status.textContent="✅ Upload Success!";
+    log("Upload complete");
+};
