@@ -23,7 +23,7 @@ const IMAGES_PER_PAGE = 30;
 
 /*********************** INIT ***********************/
 init();
-async function init() {
+async function init(){
     await loadImages();
     await loadLikes();
     buildCategories();
@@ -33,183 +33,176 @@ async function init() {
 }
 
 /*********************** LOAD IMAGES ***********************/
-async function loadImages() {
-    const { data, error } = await db.from("images").select("*").order("id", { ascending: false });
-    if (error) return console.log(error);
+async function loadImages(){
+    const {data,error} = await db.from("images").select("*").order("id",{ascending:false});
+    if(error) return console.log(error);
 
-    allImages = data.map(i => ({
-        file: i.file,
-        tags: Array.isArray(i.tags) ? i.tags :
-              typeof i.tags === "string" ? JSON.parse(i.tags) : []
+    allImages = data.map(i=>({
+        file:i.file,
+        tags:Array.isArray(i.tags)?i.tags:(typeof i.tags=="string"?JSON.parse(i.tags):[])
     }));
 }
 
 /*********************** LOAD LIKES ***********************/
-async function loadLikes() {
-    const { data } = await db.from("likes").select("*");
-    if (!data) return;
-    data.forEach(e => likeMap[e.image] = e.count);
+async function loadLikes(){
+    const {data}=await db.from("likes").select("*");
+    if(!data) return;
+    data.forEach(e=>likeMap[e.image]=e.count);
 }
 
-/*********************** REALTIME LIKE UPDATE ***********************/
-function enableRealtimeLikes() {
+/*********************** LIVE LIKE SYNC ***********************/
+function enableRealtimeLikes(){
     db.channel("likes-sync")
-    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "likes" }, payload => {
-        likeMap[payload.new.image] = payload.new.count;
-        const btn = document.querySelector(`button[data-img="${payload.new.image}"]`);
-        if (btn) btn.innerHTML = `❤️ ${payload.new.count}`;
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"likes"},payload=>{
+        likeMap[payload.new.image]=payload.new.count;
+        const btn=document.querySelector(`button[data-img="${payload.new.image}"]`);
+        if(btn) btn.innerHTML=`❤️ ${payload.new.count}`;
     }).subscribe();
 }
 
-/*********************** CATEGORY BUILDER ***********************/
-function buildCategories() {
-    const tags = new Set();
-    allImages.forEach(img => img.tags.forEach(t => tags.add(t)));
+/*********************** BUILD CATEGORIES ***********************/
+function buildCategories(){
+    const tags=new Set();
+    allImages.forEach(img=>img.tags.forEach(t=>tags.add(t)));
 
-    categoriesDiv.innerHTML = `<div class="category active">All</div>`;
-    document.querySelector(".category").onclick = () => setCategory("all");
+    categoriesDiv.innerHTML=`<div class="category active">All</div>`;
+    document.querySelector(".category").onclick=()=>setCategory("all");
 
-    tags.forEach(tag => {
-        const c = document.createElement("div");
-        c.className = "category";
-        c.innerText = tag;
-        c.onclick = () => setCategory(tag);
+    tags.forEach(tag=>{
+        const c=document.createElement("div");
+        c.className="category";
+        c.innerText=tag;
+        c.onclick=()=>setCategory(tag);
         categoriesDiv.appendChild(c);
     });
 }
 
-function setCategory(tag) {
+function setCategory(tag){
     activeTag = tag;
     currentPage = 1;
+    searchInput.value = ""; // clear search when selecting category
 
-    document.querySelectorAll(".category").forEach(e => e.classList.remove("active"));
-    [...categoriesDiv.children].find(c => c.innerText === tag).classList.add("active");
+    document.querySelectorAll(".category").forEach(e=>e.classList.remove("active"));
+    [...categoriesDiv.children].find(c=>c.innerText===tag).classList.add("active");
 
     renderImages();
 }
 
-/*********************** RENDER IMAGES (fixed search) ***********************/
-function renderImages() {
-    gallery.innerHTML = "";
+/*********************** RENDER IMAGES — fixed logic ***********************/
+function renderImages(){
+    gallery.innerHTML="";
 
-    const searchText = searchInput.value.toLowerCase();
+    const searchText = searchInput.value.toLowerCase().trim();
 
-    const filtered = allImages.filter(img => {
-        const matchesCategory = activeTag === "all" || img.tags.includes(activeTag);
-        const matchesSearch =
-            searchText === "" ||
+    const filtered = allImages.filter(img=>{
+        const tagsLower = img.tags.map(t=>t.toLowerCase());
+
+        const matchTag = activeTag==="all" || tagsLower.includes(activeTag.toLowerCase());
+        const matchSearch = searchText==="" ||
             img.file.toLowerCase().includes(searchText) ||
-            img.tags.some(t => t.toLowerCase().includes(searchText));
+            tagsLower.some(t=>t.includes(searchText));
 
-        return matchesCategory && matchesSearch;
+        return matchTag && matchSearch;
     });
 
-    const start = (currentPage - 1) * IMAGES_PER_PAGE;
-    const pageImages = filtered.slice(start, start + IMAGES_PER_PAGE);
+    const start=(currentPage-1)*IMAGES_PER_PAGE;
+    const pageImages=filtered.slice(start,start+IMAGES_PER_PAGE);
 
-    pageImages.forEach(img => {
-        const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
-        const card = document.createElement("div");
-        card.className = "card";
+    pageImages.forEach(img=>{
+        const url=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+        const card=document.createElement("div");
+        card.className="card";
 
-        const image = document.createElement("img");
-        image.src = url;
-        image.onclick = () => showPreview(url);
+        const image=document.createElement("img");
+        image.src=url;
+        image.onclick=()=>showPreview(url);
 
-        const likeBtn = createLikeBtn(img.file);
-        const downloadBtn = createDownloadBtn(url, img.file);
-
-        card.append(image, likeBtn, downloadBtn);
+        card.append(image,createLikeBtn(img.file),createDownloadBtn(url,img.file));
         gallery.append(card);
     });
 
     buildPagination(filtered.length);
 }
 
-/*********************** LIKE BUTTON — ❤️ count only ***********************/
-function createLikeBtn(file) {
-    let liked = localStorage.getItem("liked_" + file) === "true";
-    let count = likeMap[file] || 0;
+/*********************** LIKE BUTTON ***********************/
+function createLikeBtn(file){
+    let liked=localStorage.getItem("liked_"+file)==="true";
+    let count=likeMap[file]||0;
 
-    const btn = document.createElement("button");
-    btn.dataset.img = file;
-    btn.innerHTML = liked ? `❤️ ${count}` : `🤍 ${count}`;
+    const btn=document.createElement("button");
+    btn.dataset.img=file;
+    btn.innerHTML = liked?`❤️ ${count}`:`🤍 ${count}`;
 
-    btn.onclick = async () => {
-        if (liked) return;
-        liked = true;
-        count++;
-        localStorage.setItem("liked_" + file, "true");
-        await db.from("likes").upsert({ image: file, count }, { onConflict: "image" });
-        btn.innerHTML = `❤️ ${count}`;
+    btn.onclick=async()=>{
+        if(liked) return;
+        liked=true; count++;
+        localStorage.setItem("liked_"+file,"true");
+
+        await db.from("likes").upsert({image:file,count},{onConflict:"image"});
+        btn.innerHTML=`❤️ ${count}`;
     };
     return btn;
 }
 
-/*********************** DOWNLOAD ***********************/
-function createDownloadBtn(url, name) {
-    const btn = document.createElement("button");
-    btn.innerHTML = "⬇ Download";
-    btn.onclick = () => downloadImage(url, name);
+/*********************** DOWNLOAD BUTTON ***********************/
+function createDownloadBtn(url,name){
+    const btn=document.createElement("button");
+    btn.innerHTML="⬇ Download";
+    btn.onclick=()=>downloadImage(url,name);
     return btn;
 }
 
-async function downloadImage(url, name) {
-    const blob = await (await fetch(url)).blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
+async function downloadImage(url,name){
+    const blob=await (await fetch(url)).blob();
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
     a.click();
     URL.revokeObjectURL(a.href);
 }
 
 /*********************** PAGINATION ***********************/
-function buildPagination(total) {
-    pagination.innerHTML = "";
-    const totalPages = Math.ceil(total / IMAGES_PER_PAGE);
-    if (totalPages <= 1) return;
+function buildPagination(total){
+    pagination.innerHTML="";
+    const totalPages=Math.ceil(total/IMAGES_PER_PAGE);
+    if(totalPages<=1)return;
 
-    pagination.append(createPageBtn("◀", currentPage - 1, currentPage > 1));
+    pagination.append(createPageBtn("◀",currentPage-1,currentPage>1));
 
-    for (let i = 1; i <= totalPages; i++) {
-        const b = createPageBtn(i, i, true);
-        if (i === currentPage) b.classList.add("activePage");
+    for(let i=1;i<=totalPages;i++){
+        const b=createPageBtn(i,i,true);
+        if(i===currentPage) b.classList.add("activePage");
         pagination.append(b);
     }
 
-    pagination.append(createPageBtn("▶", currentPage + 1, currentPage < totalPages));
+    pagination.append(createPageBtn("▶",currentPage+1,currentPage<totalPages));
 }
 
-function createPageBtn(text, page, active) {
-    const btn = document.createElement("button");
-    btn.innerText = text;
-    btn.disabled = !active;
-    if (active) btn.onclick = () => {
-        currentPage = page;
+function createPageBtn(text,page,enabled){
+    const btn=document.createElement("button");
+    btn.innerText=text;
+    btn.disabled=!enabled;
+    if(enabled) btn.onclick=()=>{
+        currentPage=page;
         renderImages();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({top:0,behavior:"smooth"});
     };
     return btn;
 }
 
-/*********************** PREVIEW SYSTEM ***********************/
-function showPreview(url) {
-    previewImg.src = url;
-    preview.style.display = "flex";
+/*********************** PREVIEW ***********************/
+function showPreview(url){
+    previewImg.src=url;
+    preview.style.display="flex";
 }
 
-closeBtn.onclick = () => preview.style.display = "none";
-preview.onclick = e => { if (e.target === preview) preview.style.display = "none"; };
+closeBtn.onclick=()=>preview.style.display="none";
+preview.onclick=e=>{if(e.target===preview) preview.style.display="none";};
 
-document.getElementById("year").innerText = new Date().getFullYear();
+document.getElementById("year").innerText=new Date().getFullYear();
 
-/*********************** SEARCH FIX — global search mode ***********************/
-searchInput.oninput = () => {
-    currentPage = 1;
-    if (searchInput.value.trim() !== "") {
-        activeTag = "all";
-        document.querySelectorAll(".category").forEach(c => c.classList.remove("active"));
-        document.querySelector(".category").classList.add("active");
-    }
+/*********************** SEARCH LIVE WITH TAG SUPPORT ***********************/
+searchInput.oninput = ()=>{
+    currentPage=1;
     renderImages();
 };
