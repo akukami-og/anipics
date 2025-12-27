@@ -50,7 +50,7 @@ async function loadLikes(){
     data.forEach(e=>likeMap[e.image]=e.count);
 }
 
-/*********************** LIVE LIKE SYNC ***********************/
+/*********************** REALTIME LIKE UPDATE ***********************/
 function enableRealtimeLikes(){
     db.channel("likes-sync")
     .on("postgres_changes",{event:"UPDATE",schema:"public",table:"likes"},payload=>{
@@ -77,18 +77,19 @@ function buildCategories(){
     });
 }
 
+/*********************** CATEGORY CLICK FIX ***********************/
 function setCategory(tag){
     activeTag = tag;
     currentPage = 1;
-    searchInput.value = ""; // clear search when selecting category
+    searchInput.value = ""; // Reset search when tag clicked
 
-    document.querySelectorAll(".category").forEach(e=>e.classList.remove("active"));
-    [...categoriesDiv.children].find(c=>c.innerText===tag).classList.add("active");
+    document.querySelectorAll(".category").forEach(c => c.classList.remove("active"));
+    [...categoriesDiv.children].find(c=>c.innerText.toLowerCase()==tag.toLowerCase()).classList.add("active");
 
     renderImages();
 }
 
-/*********************** RENDER IMAGES — fixed logic ***********************/
+/*********************** RENDER IMAGES (FINAL FIX) ***********************/
 function renderImages(){
     gallery.innerHTML="";
 
@@ -96,9 +97,8 @@ function renderImages(){
 
     const filtered = allImages.filter(img=>{
         const tagsLower = img.tags.map(t=>t.toLowerCase());
-
         const matchTag = activeTag==="all" || tagsLower.includes(activeTag.toLowerCase());
-        const matchSearch = searchText==="" ||
+        const matchSearch = !searchText ||
             img.file.toLowerCase().includes(searchText) ||
             tagsLower.some(t=>t.includes(searchText));
 
@@ -110,6 +110,7 @@ function renderImages(){
 
     pageImages.forEach(img=>{
         const url=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+
         const card=document.createElement("div");
         card.className="card";
 
@@ -137,14 +138,13 @@ function createLikeBtn(file){
         if(liked) return;
         liked=true; count++;
         localStorage.setItem("liked_"+file,"true");
-
         await db.from("likes").upsert({image:file,count},{onConflict:"image"});
         btn.innerHTML=`❤️ ${count}`;
     };
     return btn;
 }
 
-/*********************** DOWNLOAD BUTTON ***********************/
+/*********************** DOWNLOAD ***********************/
 function createDownloadBtn(url,name){
     const btn=document.createElement("button");
     btn.innerHTML="⬇ Download";
@@ -201,8 +201,12 @@ preview.onclick=e=>{if(e.target===preview) preview.style.display="none";};
 
 document.getElementById("year").innerText=new Date().getFullYear();
 
-/*********************** SEARCH LIVE WITH TAG SUPPORT ***********************/
-searchInput.oninput = ()=>{
+/*********************** SEARCH (LIVE + FIX) ***********************/
+searchInput.oninput = () =>{
+    activeTag="all"; // Search always shows whole dataset
+    document.querySelectorAll(".category").forEach(c=>c.classList.remove("active"));
+    document.querySelector(".category").classList.add("active");
+
     currentPage=1;
     renderImages();
 };
