@@ -4,7 +4,7 @@ const SUPABASE_KEY = "sb_publishable_DhiBec9_K-jgfAuaXLOIJw_7TKC7BBU";
 const BUCKET = "images";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/*********************** ELEMENTS ***********************/
+/*********************** DOM REFERENCES ***********************/
 const gallery = document.getElementById("gallery");
 const preview = document.getElementById("preview");
 const previewImg = document.getElementById("previewImg");
@@ -14,7 +14,7 @@ const categoriesDiv = document.getElementById("categories");
 const loader = document.getElementById("loader");
 const pagination = document.getElementById("pagination");
 
-/*********************** VARIABLES ***********************/
+/*********************** STATES ***********************/
 let allImages = [];
 let likeMap = {};
 let activeTag = "all";
@@ -23,6 +23,7 @@ const IMAGES_PER_PAGE = 30;
 
 /*********************** INIT ***********************/
 init();
+
 async function init(){
     await loadImages();
     await loadLikes();
@@ -35,23 +36,23 @@ async function init(){
 /*********************** LOAD IMAGES ***********************/
 async function loadImages(){
     const {data,error} = await db.from("images").select("*").order("id",{ascending:false});
-    if(error) return console.log("Image Load Error:",error);
+    if(error) return console.error("Image Load Error:",error);
 
-    allImages = data.map(i => ({
-        file : i.file,
-        tags : Array.isArray(i.tags) ? i.tags :
-               typeof i.tags=="string" ? JSON.parse(i.tags) : []
+    allImages = data.map(img => ({
+        file: img.file,
+        tags: Array.isArray(img.tags) ? img.tags :
+              typeof img.tags === "string" ? JSON.parse(img.tags) : []
     }));
 }
 
-/*********************** LOAD LIKES ***********************/
+/*********************** LOAD LIKE DATA ***********************/
 async function loadLikes(){
-    const {data}=await db.from("likes").select("*");
+    const {data} = await db.from("likes").select("*");
     if(!data) return;
-    data.forEach(e=> likeMap[e.image] = e.count );
+    data.forEach(row => likeMap[row.image] = row.count);
 }
 
-/*********************** LIVE LIKE AUTO SYNC ***********************/
+/*********************** REALTIME LIKE UPDATE ***********************/
 function enableRealtimeLikes(){
     db.channel("likes-sync")
     .on("postgres_changes",{event:"UPDATE",schema:"public",table:"likes"},payload=>{
@@ -61,36 +62,36 @@ function enableRealtimeLikes(){
     }).subscribe();
 }
 
-/*********************** CATEGORY BUILDER ***********************/
+/*********************** CATEGORY FILTERS ***********************/
 function buildCategories(){
     const tags = new Set();
     allImages.forEach(img => img.tags.forEach(t => tags.add(t)));
 
     categoriesDiv.innerHTML = `<div class="category active">All</div>`;
-    document.querySelector(".category").onclick = ()=> setCategory("all");
+    document.querySelector(".category").onclick = () => setCategory("all");
 
     tags.forEach(tag=>{
-        const c = document.createElement("div");
-        c.className = "category";
-        c.innerText = tag;
-        c.onclick = ()=> setCategory(tag);
-        categoriesDiv.appendChild(c);
+        const div = document.createElement("div");
+        div.className="category";
+        div.innerText=tag;
+        div.onclick=()=>setCategory(tag);
+        categoriesDiv.appendChild(div);
     });
 }
 
 function setCategory(tag){
     activeTag = tag;
-    searchInput.value = "";       // clear search when category chosen
+    searchInput.value = "";
     currentPage = 1;
 
     document.querySelectorAll(".category").forEach(c=>c.classList.remove("active"));
-    [...categoriesDiv.children].find(e=> e.innerText.toLowerCase()==tag.toLowerCase())
+    [...categoriesDiv.children].find(c=>c.innerText.toLowerCase()==tag.toLowerCase())
         .classList.add("active");
 
     renderImages();
 }
 
-/*********************** RENDER IMAGES (clean + fast) ***********************/
+/*********************** RENDER IMAGE GRID ***********************/
 function renderImages(){
     gallery.innerHTML = "";
     const searchText = searchInput.value.toLowerCase().trim();
@@ -100,25 +101,28 @@ function renderImages(){
         const matchSearch = !searchText ||
             img.file.toLowerCase().includes(searchText) ||
             tagsLower.some(t => t.includes(searchText));
-
         const matchTag = activeTag==="all" || tagsLower.includes(activeTag.toLowerCase());
 
         return matchSearch && matchTag;
     });
 
-    const start=(currentPage-1)*IMAGES_PER_PAGE;
+    const start = (currentPage-1)*IMAGES_PER_PAGE;
     const pageImages = filtered.slice(start,start+IMAGES_PER_PAGE);
 
     pageImages.forEach(img=>{
-        const url=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
-        const card=document.createElement("div");
+        const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
+        const card = document.createElement("div");
         card.className="card";
 
-        const image=document.createElement("img");
+        const image = document.createElement("img");
         image.src=url;
         image.onclick=()=>showPreview(url);
 
-        card.append(image, createLikeBtn(img.file), createDownloadBtn(url,img.file));
+        card.append(
+            image,
+            createLikeBtn(img.file),
+            createDownloadBtn(url,img.file)
+        );
         gallery.append(card);
     });
 
@@ -132,7 +136,7 @@ function createLikeBtn(file){
 
     const btn=document.createElement("button");
     btn.dataset.img=file;
-    btn.innerHTML = liked ? `❤️ ${count}` : `🤍 ${count}`;
+    btn.innerHTML = liked ? `❤️ ${count}`:`🤍 ${count}`;
 
     btn.onclick=async()=>{
         if(liked) return;
@@ -140,7 +144,7 @@ function createLikeBtn(file){
         localStorage.setItem("liked_"+file,"true");
 
         await db.from("likes").upsert({image:file,count},{onConflict:"image"});
-        btn.innerHTML=`❤️ ${count}`;
+        btn.innerHTML = `❤️ ${count}`;
     };
 
     return btn;
@@ -166,49 +170,47 @@ async function downloadImage(url,name){
 /*********************** PAGINATION ***********************/
 function buildPagination(total){
     pagination.innerHTML="";
-    const totalPages=Math.ceil(total/IMAGES_PER_PAGE);
+    const totalPages = Math.ceil(total/IMAGES_PER_PAGE);
     if(totalPages<=1) return;
 
     pagination.append(createPageBtn("◀",currentPage-1,currentPage>1));
 
     for(let i=1;i<=totalPages;i++){
-        const b=createPageBtn(i,i,true);
-        if(i===currentPage) b.classList.add("activePage");
-        pagination.append(b);
+        const btn=createPageBtn(i,i,true);
+        if(i===currentPage) btn.classList.add("activePage");
+        pagination.append(btn);
     }
 
     pagination.append(createPageBtn("▶",currentPage+1,currentPage<totalPages));
 }
 
-function createPageBtn(text,page,enabled){
+function createPageBtn(text,page,active){
     const btn=document.createElement("button");
     btn.innerText=text;
-    btn.disabled=!enabled;
-    if(enabled) btn.onclick=()=>{
-        currentPage = page;
+    btn.disabled=!active;
+    if(active) btn.onclick=()=>{
+        currentPage=page;
         renderImages();
         window.scrollTo({top:0,behavior:"smooth"});
     };
     return btn;
 }
 
-/*********************** PREVIEW ***********************/
+/*********************** IMAGE PREVIEW ***********************/
 function showPreview(url){
     previewImg.src=url;
     preview.style.display="flex";
 }
-
 closeBtn.onclick = ()=> preview.style.display="none";
-preview.onclick = e => { if(e.target===preview) preview.style.display="none"; };
+preview.onclick = e=>{ if(e.target===preview) preview.style.display="none"; };
 
-document.getElementById("year").innerText = new Date().getFullYear();
+document.getElementById("year").innerText=new Date().getFullYear();
 
-/*********************** SEARCH LIVE MODE ***********************/
+/*********************** LIVE SEARCH HANDLER ***********************/
 searchInput.oninput = ()=>{
-    activeTag = "all";
+    activeTag="all";
     document.querySelectorAll(".category").forEach(c=>c.classList.remove("active"));
     document.querySelector(".category").classList.add("active");
-
     currentPage=1;
     renderImages();
 };
