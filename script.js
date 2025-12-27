@@ -5,21 +5,22 @@ const BUCKET = "images";
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /*********************** ELEMENTS ***********************/
-const gallery = document.getElementById("gallery");
-const preview = document.getElementById("preview");
-const previewImg = document.getElementById("previewImg");
-const closeBtn = document.getElementById("close");
-const searchInput = document.getElementById("search");
-const categoriesDiv = document.getElementById("categories");
-const loader = document.getElementById("loader");
-const pagination = document.getElementById("pagination");
+const gallery=document.getElementById("gallery");
+const preview=document.getElementById("preview");
+const previewImg=document.getElementById("previewImg");
+const closeBtn=document.getElementById("close");
+const searchInput=document.getElementById("search");
+const categoriesDiv=document.getElementById("categories");
+const loader=document.getElementById("loader");
+const pagination=document.getElementById("pagination");
 
 /*********************** VARIABLES ***********************/
-let allImages = [];
-let likeMap = {};
-let activeTag = "all";
-let currentPage = 1;
-const IMAGES_PER_PAGE = 30;
+let allImages=[];
+let likeMap={};
+let activeTag="all";
+let currentPage=1;
+const IMAGES_PER_PAGE=30;
+
 
 /*********************** INIT ***********************/
 init();
@@ -29,19 +30,21 @@ async function init(){
     buildCategories();
     renderImages();
     enableRealtimeLikes();
-    loader.style.display = "none";
+    loader.style.display="none";
 }
+
 
 /*********************** LOAD IMAGES ***********************/
 async function loadImages(){
-    const {data,error} = await db.from("images").select("*").order("id",{ascending:false});
+    const {data,error}=await db.from("images").select("*").order("id",{ascending:false});
     if(error) return console.log(error);
 
-    allImages = data.map(i=>({
+    allImages=data.map(i=>({
         file:i.file,
         tags:Array.isArray(i.tags)?i.tags:(typeof i.tags=="string"?JSON.parse(i.tags):[])
     }));
 }
+
 
 /*********************** LOAD LIKES ***********************/
 async function loadLikes(){
@@ -50,7 +53,8 @@ async function loadLikes(){
     data.forEach(e=>likeMap[e.image]=e.count);
 }
 
-/*********************** REALTIME LIKE UPDATE ***********************/
+
+/*********************** REALTIME LIKE SYNC ***********************/
 function enableRealtimeLikes(){
     db.channel("likes-sync")
     .on("postgres_changes",{event:"UPDATE",schema:"public",table:"likes"},payload=>{
@@ -59,6 +63,7 @@ function enableRealtimeLikes(){
         if(btn) btn.innerHTML=`❤️ ${payload.new.count}`;
     }).subscribe();
 }
+
 
 /*********************** BUILD CATEGORIES ***********************/
 function buildCategories(){
@@ -77,32 +82,36 @@ function buildCategories(){
     });
 }
 
-/*********************** CATEGORY CLICK FIX ***********************/
-function setCategory(tag){
-    activeTag = tag;
-    currentPage = 1;
-    searchInput.value = ""; // Reset search when tag clicked
 
-    document.querySelectorAll(".category").forEach(c => c.classList.remove("active"));
-    [...categoriesDiv.children].find(c=>c.innerText.toLowerCase()==tag.toLowerCase()).classList.add("active");
+/*********************** CATEGORY CLICK ***********************/
+function setCategory(tag){
+    activeTag=tag;
+    currentPage=1;
+    searchInput.value=""; // Clear search when tag selected
+
+    document.querySelectorAll(".category").forEach(c=>c.classList.remove("active"));
+    [...categoriesDiv.children].find(c=>c.innerText.toLowerCase()==tag.toLowerCase())
+        .classList.add("active");
 
     renderImages();
 }
 
-/*********************** RENDER IMAGES (FINAL FIX) ***********************/
+
+/*********************** RENDER IMAGES (perfect search+tag filter) ***********************/
 function renderImages(){
     gallery.innerHTML="";
 
-    const searchText = searchInput.value.toLowerCase().trim();
+    const searchText=searchInput.value.toLowerCase().trim();
 
-    const filtered = allImages.filter(img=>{
+    const filtered=allImages.filter(img=>{
         const tagsLower = img.tags.map(t=>t.toLowerCase());
-        const matchTag = activeTag==="all" || tagsLower.includes(activeTag.toLowerCase());
-        const matchSearch = !searchText ||
+        const matchSearch = searchText==="" ||
             img.file.toLowerCase().includes(searchText) ||
             tagsLower.some(t=>t.includes(searchText));
 
-        return matchTag && matchSearch;
+        const matchTag = activeTag==="all" || tagsLower.includes(activeTag.toLowerCase());
+
+        return matchSearch && matchTag;  // final combined filter
     });
 
     const start=(currentPage-1)*IMAGES_PER_PAGE;
@@ -110,7 +119,6 @@ function renderImages(){
 
     pageImages.forEach(img=>{
         const url=`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
-
         const card=document.createElement("div");
         card.className="card";
 
@@ -125,7 +133,8 @@ function renderImages(){
     buildPagination(filtered.length);
 }
 
-/*********************** LIKE BUTTON ***********************/
+
+/*********************** LIKE BTN ***********************/
 function createLikeBtn(file){
     let liked=localStorage.getItem("liked_"+file)==="true";
     let count=likeMap[file]||0;
@@ -144,6 +153,7 @@ function createLikeBtn(file){
     return btn;
 }
 
+
 /*********************** DOWNLOAD ***********************/
 function createDownloadBtn(url,name){
     const btn=document.createElement("button");
@@ -161,6 +171,7 @@ async function downloadImage(url,name){
     URL.revokeObjectURL(a.href);
 }
 
+
 /*********************** PAGINATION ***********************/
 function buildPagination(total){
     pagination.innerHTML="";
@@ -170,9 +181,9 @@ function buildPagination(total){
     pagination.append(createPageBtn("◀",currentPage-1,currentPage>1));
 
     for(let i=1;i<=totalPages;i++){
-        const b=createPageBtn(i,i,true);
-        if(i===currentPage) b.classList.add("activePage");
-        pagination.append(b);
+        const btn=createPageBtn(i,i,true);
+        if(i===currentPage) btn.classList.add("activePage");
+        pagination.append(btn);
     }
 
     pagination.append(createPageBtn("▶",currentPage+1,currentPage<totalPages));
@@ -190,6 +201,7 @@ function createPageBtn(text,page,enabled){
     return btn;
 }
 
+
 /*********************** PREVIEW ***********************/
 function showPreview(url){
     previewImg.src=url;
@@ -201,12 +213,12 @@ preview.onclick=e=>{if(e.target===preview) preview.style.display="none";};
 
 document.getElementById("year").innerText=new Date().getFullYear();
 
-/*********************** SEARCH (LIVE + FIX) ***********************/
-searchInput.oninput = () =>{
-    activeTag="all"; // Search always shows whole dataset
+
+/*********************** SEARCH LIVE (now perfect) ***********************/
+searchInput.oninput=()=>{
+    activeTag="all"; 
     document.querySelectorAll(".category").forEach(c=>c.classList.remove("active"));
     document.querySelector(".category").classList.add("active");
-
     currentPage=1;
     renderImages();
 };
