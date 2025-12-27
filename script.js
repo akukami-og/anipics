@@ -34,12 +34,8 @@ async function init() {
 
 /*********************** LOAD IMAGES ***********************/
 async function loadImages() {
-    const { data, error } = await db
-        .from("images")
-        .select("*")
-        .order("id", { ascending: false });
-
-    if (error) return console.log("Image Load Error:", error);
+    const { data, error } = await db.from("images").select("*").order("id", { ascending: false });
+    if (error) return console.log(error);
 
     allImages = data.map(i => ({
         file: i.file,
@@ -58,16 +54,11 @@ async function loadLikes() {
 /*********************** REALTIME LIKE UPDATE ***********************/
 function enableRealtimeLikes() {
     db.channel("likes-sync")
-        .on(
-            "postgres_changes",
-            { event: "UPDATE", schema: "public", table: "likes" },
-            ({ new: r }) => {
-                likeMap[r.image] = r.count;
-                const btn = document.querySelector(`button[data-img="${r.image}"]`);
-                if (btn) btn.innerHTML = `❤️ ${r.count}`;
-            }
-        )
-        .subscribe();
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "likes" }, payload => {
+        likeMap[payload.new.image] = payload.new.count;
+        const btn = document.querySelector(`button[data-img="${payload.new.image}"]`);
+        if (btn) btn.innerHTML = `❤️ ${payload.new.count}`;
+    }).subscribe();
 }
 
 /*********************** CATEGORY BUILDER ***********************/
@@ -90,28 +81,34 @@ function buildCategories() {
 function setCategory(tag) {
     activeTag = tag;
     currentPage = 1;
+
     document.querySelectorAll(".category").forEach(e => e.classList.remove("active"));
     [...categoriesDiv.children].find(c => c.innerText === tag).classList.add("active");
+
     renderImages();
 }
 
-/*********************** RENDER IMAGES ***********************/
+/*********************** RENDER IMAGES (fixed search) ***********************/
 function renderImages() {
     gallery.innerHTML = "";
 
-    const filtered = allImages.filter(img =>
-        (activeTag === "all" || img.tags.includes(activeTag)) &&
-        (searchInput.value === "" ||
-         img.file.toLowerCase().includes(searchInput.value.toLowerCase()) ||
-         img.tags.some(t => t.toLowerCase().includes(searchInput.value.toLowerCase())))
-    );
+    const searchText = searchInput.value.toLowerCase();
+
+    const filtered = allImages.filter(img => {
+        const matchesCategory = activeTag === "all" || img.tags.includes(activeTag);
+        const matchesSearch =
+            searchText === "" ||
+            img.file.toLowerCase().includes(searchText) ||
+            img.tags.some(t => t.toLowerCase().includes(searchText));
+
+        return matchesCategory && matchesSearch;
+    });
 
     const start = (currentPage - 1) * IMAGES_PER_PAGE;
     const pageImages = filtered.slice(start, start + IMAGES_PER_PAGE);
 
     pageImages.forEach(img => {
         const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${img.file}`;
-
         const card = document.createElement("div");
         card.className = "card";
 
@@ -143,15 +140,13 @@ function createLikeBtn(file) {
         liked = true;
         count++;
         localStorage.setItem("liked_" + file, "true");
-
         await db.from("likes").upsert({ image: file, count }, { onConflict: "image" });
         btn.innerHTML = `❤️ ${count}`;
     };
-
     return btn;
 }
 
-/*********************** DOWNLOAD BUTTON — ⬇ Download ***********************/
+/*********************** DOWNLOAD ***********************/
 function createDownloadBtn(url, name) {
     const btn = document.createElement("button");
     btn.innerHTML = "⬇ Download";
@@ -207,3 +202,14 @@ closeBtn.onclick = () => preview.style.display = "none";
 preview.onclick = e => { if (e.target === preview) preview.style.display = "none"; };
 
 document.getElementById("year").innerText = new Date().getFullYear();
+
+/*********************** SEARCH FIX — global search mode ***********************/
+searchInput.oninput = () => {
+    currentPage = 1;
+    if (searchInput.value.trim() !== "") {
+        activeTag = "all";
+        document.querySelectorAll(".category").forEach(c => c.classList.remove("active"));
+        document.querySelector(".category").classList.add("active");
+    }
+    renderImages();
+};
